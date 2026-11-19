@@ -33,6 +33,13 @@ supabase/schema.sql     tables, security rules, order functions, storage bucket
 - **Orders**: status changes are recorded in history; cancelling returns stock. Print and CSV export included.
 - Discounts, prices, delivery and stock are always recomputed on the server when an order is placed.
 
+## What the Website page controls (Admin → Website)
+Brand/logo, colours, **section colours** (hero, announcement bar, moving band, sale strip, products, about, footer, header text, product page), typography, **text sizes** for headings/menu/buttons/prices/footer and more,
+announcement bar, hero text + wallet image/video/extra views, **extra motion graphics** (hero background video, plus any number of floating images/GIFs/videos with position, size, opacity and movement),
+a **motion banner** section (video or image with text and button; switch it on under Homepage sections), curtain text/logo, each motion effect on/off and overall speed, homepage section order,
+sale banner, delivery, policies, footer, **Instagram / WhatsApp / Facebook / TikTok / YouTube / email / phone / address**, and every label on the site.
+The panel on the right is the real storefront and updates as you type; choosing a section on the left scrolls the preview to it.
+
 ## Notes and limits
 - Orders are Cash on Delivery only. No online payments are implemented.
 - Admin lists load the latest 1000 orders.

@@ -174,7 +174,7 @@ select{padding:9px 14px;border:1px solid var(--line);font:inherit;font-size:13px
 .contact{display:flex;gap:40px;flex-wrap:wrap;color:var(--muted)}
 
 footer{background:var(--footer);color:#fff;padding:64px 0 28px}
-.fg{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px}
+.fg{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:32px}
 footer h4{font-size:12px;letter-spacing:.14em;margin-bottom:14px;font-weight:600}
 footer li{list-style:none;margin:8px 0;color:#bbb;font-size:14px}
 footer li a:hover{color:#fff}
@@ -325,6 +325,52 @@ body{font-size:var(--bs,15px)}
 }
 @media(min-width:1200px){.products.g3{grid-template-columns:repeat(3,1fr)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.hero h1 .w i,.hero p,.hero .btn{opacity:1;transform:none}}
+
+/* ===== section colours, text sizes, extra motion layers, banner (admin-controlled) ===== */
+header{color:var(--head-text,inherit)}
+.announce{background:var(--ann-bg,#000);color:var(--ann-text,#fff);font-size:calc(12px*var(--z-ann,1))}
+.hero{background:var(--hero-bg,#000);color:var(--hero-text,#fff);isolation:isolate}
+.hero p{color:inherit;opacity:.78;font-size:calc(var(--bs,15px)*var(--z-herod,1))}
+.hero .wrap.grid{position:relative;z-index:2}
+.hero h1{font-size:calc(clamp(46px,8vw,118px)*var(--hs,1)*var(--z-hero,1))}
+.ticker{background:var(--tick-bg,#fff);color:var(--tick-text,#0a0a0a);font-size:calc(clamp(28px,4vw,48px)*var(--z-tick,1))}
+.ticker em{color:inherit;opacity:.5}
+.sale{background:var(--sale-bg,#f4f4f4);color:var(--sale-text,#0a0a0a)}
+#wallets{background:var(--shop-bg,#fff);color:var(--shop-text,#0a0a0a)}
+.about{background:var(--about-bg,#f4f4f4);color:var(--about-text,#0a0a0a)}
+.pdp{background:var(--pdp-bg,#fff)}
+footer{color:var(--foot-text,#fff)}
+footer li,.fg p{color:inherit;opacity:.7;font-size:calc(14px*var(--z-foot,1))}
+footer h4{font-size:calc(12px*var(--z-foot,1))}
+.head h2{font-size:calc(clamp(36px,5vw,64px)*var(--hs,1)*var(--z-sec,1))}
+.about h2{font-size:calc(clamp(34px,5vw,60px)*var(--hs,1)*var(--z-sec,1))}
+.about p{font-size:calc(clamp(22px,2.6vw,32px)*var(--z-about,1))}
+nav a,.ico{font-size:calc(12px*var(--z-nav,1))}
+.btn{font-size:calc(12px*var(--z-btn,1))}
+.pc h3{font-size:calc(14px*var(--z-card,1))}
+.pc .pr{font-size:calc(14px*var(--z-price,1))}
+.info h1{font-size:calc(clamp(34px,4vw,54px)*var(--hs,1)*var(--z-pdp,1))}
+.info .price{font-size:calc(22px*var(--z-pdpp,1))}
+.hlayers{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.hbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:var(--bgo,.4);z-index:0}
+.hl{position:absolute;translate:-50% -50%}
+.hl.back{z-index:1}.hl.front{z-index:3}
+.hl img,.hl video{width:100%;height:auto;display:block}
+.an-float{animation:hfloat calc(6s*var(--k,1)) ease-in-out infinite}
+.an-spin{animation:hspin calc(24s*var(--k,1)) linear infinite}
+.an-pulse{animation:hpulse calc(4s*var(--k,1)) ease-in-out infinite}
+.an-drift{animation:hdrift calc(9s*var(--k,1)) ease-in-out infinite}
+@keyframes hfloat{50%{transform:translateY(-18px)}}
+@keyframes hspin{to{transform:rotate(360deg)}}
+@keyframes hpulse{50%{transform:scale(1.08)}}
+@keyframes hdrift{50%{transform:translateX(26px)}}
+section.banner{position:relative;height:var(--bh,60vh);min-height:240px;padding:0;overflow:hidden;background:#000;display:grid;place-items:center;text-align:center}
+.bmedia{position:absolute;inset:0}.bmedia>*{width:100%;height:100%;object-fit:cover}
+.banner::after{content:"";position:absolute;inset:0;background:#000;opacity:var(--bo,.4)}
+.btxt{position:relative;z-index:2;max-width:760px;padding:0 20px}
+.btxt h2{font-size:calc(clamp(34px,6vw,80px)*var(--hs,1))}
+.btxt p{margin:14px 0 24px;font-size:calc(var(--bs,15px)*1.1)}
+.btxt .btn{background:#fff;color:#000;border-color:#fff}.btxt .btn::before{background:#000}.btxt .btn:hover{color:#fff}
 </style>
 </head>
 <body>
@@ -350,6 +396,7 @@ body{font-size:var(--bs,15px)}
 
 <main id="top">
   <section class="hero" style="padding:0">
+    <div class="hlayers" id="hlayers"></div>
     <div class="wrap grid">
       <div>
         <h1 id="hTitle"></h1>
@@ -367,6 +414,8 @@ body{font-size:var(--bs,15px)}
 
   <div class="ticker"><div class="track" id="tick"></div></div>
   <div class="sale" id="sale"></div>
+
+  <section class="banner" id="banner" hidden><div class="bmedia" id="bmedia"></div><div class="btxt" id="btxt"></div></section>
 
   <section id="wallets">
     <div class="wrap">
@@ -398,7 +447,8 @@ body{font-size:var(--bs,15px)}
     <div class="fg">
       <div><div class="logo" id="flogo" style="font-size:26px">RAAS</div><p style="color:#999;margin-top:14px;max-width:260px;font-size:14px" id="fAbout"></p></div>
       <div><h4 data-t="footShop">SHOP</h4><ul><li><a href="#wallets" data-t="collectionTitle">All Wallets</a></li></ul></div>
-      <div><h4 data-t="footFollow">FOLLOW</h4><ul><li><a id="ig" href="#">Instagram</a></li><li><a id="wa" href="#">WhatsApp</a></li></ul></div>
+      <div><h4 data-t="footFollow">FOLLOW</h4><ul id="follow"></ul></div>
+      <div><h4 data-t="navContact">CONTACT</h4><ul id="fcontact"></ul></div>
       <div><h4 data-t="footPolicies">POLICIES</h4><ul><li><a href="#" data-policy="privacy" data-t="privacy">Privacy Policy</a></li><li><a href="#" data-policy="returns" data-t="returns">Return and Exchange Policy</a></li></ul></div>
     </div>
     <div class="copy" data-t="copyright">© RAAS. All rights reserved.</div>
@@ -430,6 +480,7 @@ const sb=(sbc.url&&sbc.anonKey&&window.supabase)?window.supabase.createClient(sb
 let CFG=window.RAAS_merge(D,{}),HERO_MEDIA={},SETTINGS={},PRODUCTS=[],CATS=[];
 const T=k=>CFG.text[k]??k;
 const esc=x=>String(x??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const safeUrl=u=>/^(https?:|mailto:|tel:|#|\/|\.)/i.test(u||"")?u:"#";
 const num=v=>v===""||v==null||isNaN(+v)?null:+v;
 function buildSettings(){
   const h=CFG.hero,c=CFG.contact,s=CFG.sale;
@@ -463,7 +514,7 @@ async function loadData(){
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-const money=n=>n==null?"Price to be set":"PKR "+Number(n).toLocaleString("en-PK");
+const money=n=>n==null?T("priceTbd"):"PKR "+Number(n).toLocaleString("en-PK");
 /* Discounts: product discount (percent or fixed, optional start/end) wins over the store-wide sale. */
 function disc(p){
   const now=Date.now(),d=p.discount,s=SETTINGS.sale;
@@ -472,9 +523,9 @@ function disc(p){
   return {pct:0,fix:0,end:null};
 }
 const eff=p=>{if(p.price==null)return null;if(p.salePrice!=null)return p.salePrice;const d=disc(p);return Math.max(0,Math.round(p.price*(1-d.pct/100)-d.fix))};
-const off=p=>{const d=disc(p);if(p.price==null)return d.pct?d.pct+"% OFF":"";const e=eff(p);return e<p.price?(d.pct?d.pct+"% OFF":"SAVE PKR "+(p.price-e)):""};
+const off=p=>{const d=disc(p);if(p.price==null)return d.pct?T("pctOff").replace("{n}",d.pct):"";const e=eff(p);return e<p.price?(d.pct?T("pctOff").replace("{n}",d.pct):T("saveAmt").replace("{n}",p.price-e)):""};
 const priceHTML=p=>{const e=eff(p);return p.price!=null&&e<p.price?`${money(e)}<s>${money(p.price)}</s>`:money(p.price)};
-const cdnHTML=end=>`<div class="cdn" data-end="${end}">${["Days","Hours","Min","Sec"].map(x=>`<div><b>00</b><small>${x}</small></div>`).join("")}</div>`;
+const cdnHTML=end=>`<div class="cdn" data-end="${end}">${[T("days"),T("hours"),T("min"),T("sec")].map(x=>`<div><b>00</b><small>${x}</small></div>`).join("")}</div>`;
 function tick(){
   $$(".cdn").forEach(c=>{
     const t=Math.max(0,Date.parse(c.dataset.end)-Date.now())/1000|0,v=[t/86400|0,t%86400/3600|0,t%3600/60|0,t%60];
@@ -485,7 +536,7 @@ function drawSale(){
   const s=SETTINGS.sale,el=$("#sale");
   if(!s||!s.percent||(s.endsAt&&Date.parse(s.endsAt)<=Date.now())){el.classList.remove("on");el.innerHTML="";return}
   el.classList.add("on");
-  el.innerHTML=`<div class="wrap"><h3>${esc(s.label)}: flat ${s.percent}% off</h3>${s.endsAt?cdnHTML(s.endsAt):""}<a class="btn" href="#wallets"><span>${T("shopSale")}</span></a></div>`;
+  el.innerHTML=`<div class="wrap"><h3>${esc(s.label)}: ${esc(T("saleLine")).replace("{n}",s.percent)}</h3>${s.endsAt?cdnHTML(s.endsAt):""}<a class="btn" href="#wallets"><span>${T("shopSale")}</span></a></div>`;
   tick();
 }
 setInterval(tick,1000);
@@ -502,7 +553,7 @@ function wallet(a,hex,bg){
    <rect x="${x+(s>0?w:-side)}" y="-96" width="${side}" height="192" rx="6" fill="${shade(hex,-35)}"/>
    <rect x="${x}" y="-100" width="${w}" height="200" rx="10" fill="${face}"/>
    ${w>60?`<rect x="${x+w*.07}" y="-88" width="${w*.86}" height="176" rx="6" fill="none" stroke="#fff" stroke-opacity=".28" stroke-dasharray="4 4"/>
-   ${back?'':`<text x="${x+w/2}" y="6" text-anchor="middle" font-family="Georgia,serif" font-size="${Math.max(10,w*.12)}" letter-spacing="${w*.04}" fill="#fff" fill-opacity=".85">RAAS</text>`}`:''}
+   ${back?'':`<text x="${x+w/2}" y="6" text-anchor="middle" font-family="Georgia,serif" font-size="${Math.max(10,w*.12)}" letter-spacing="${w*.04}" fill="#fff" fill-opacity=".85">${esc(CFG.hero.sampleText)}</text>`}`:''}
   </g></svg>`}
 function shade(h,p){const n=parseInt(h.slice(1),16),f=v=>Math.max(0,Math.min(255,v+p*2.55|0));return "#"+((1<<24)+(f(n>>16)<<16)+(f(n>>8&255)<<8)+f(n&255)).toString(16).slice(1)}
 const ANGLES=[0,32,-32,70];                       // the 3–4 "photo" angles
@@ -513,7 +564,7 @@ function frames(col){return col.images&&col.images.length?col.images:ANGLES.map(
 function applySettings(){
   const h=SETTINGS.hero;
   $("#hTitle").innerHTML=h.title.split(" ").map((w,i)=>`<span class="w"><i style="animation-delay:${.15+i*.14}s">${esc(w)}</i></span>`).join(" ");
-  $("#hDesc").textContent=h.desc; $("#hBtn span").textContent=h.btn; $("#hBtn").href=h.link;
+  $("#hDesc").textContent=h.desc; $("#hBtn span").textContent=h.btn; $("#hBtn").href=safeUrl(h.link);
   buildMedia();
   const a=[...SETTINGS.announcements,...SETTINGS.announcements,...SETTINGS.announcements,...SETTINGS.announcements];
   $("#ann").innerHTML=a.map(t=>`<span>${esc(t).toUpperCase()}</span>`).join("");
@@ -521,8 +572,7 @@ function applySettings(){
   $("#tick").innerHTML=[...words,...words,...words,...words].map((w,i)=>i%2?`<em>${w}</em>`:`<span>${w}</span>`).join("<span>—</span>");
   $("#aboutTxt").textContent=SETTINGS.about; $("#fAbout").textContent=CFG.footer.about;
   const c=SETTINGS.contact;
-  $("#contact").innerHTML=[c.email&&`<span>${esc(c.email)}</span>`,c.phone&&`<span>${esc(c.phone)}</span>`,c.address&&`<span>${esc(c.address)}</span>`].filter(Boolean).join("")||"<span>Contact details are added from the Admin Dashboard.</span>";
-  $("#ig").href=c.instagram||"#"; $("#wa").href=c.whatsapp?`https://wa.me/${c.whatsapp.replace(/\D/g,"")}`:"#";
+  $("#contact").innerHTML=[c.email&&`<span>${esc(c.email)}</span>`,c.phone&&`<span>${esc(c.phone)}</span>`,c.address&&`<span>${esc(c.address)}</span>`].filter(Boolean).join("")||"";
 }
 
 /* ---------- collection ---------- */
@@ -540,7 +590,7 @@ function drawGrid(){
     return `<button class="pc rv" style="transition-delay:${(i%4)*80}ms" data-id="${p.id}">
       <div class="img">${p.featured?`<span class="tag">${T("featured")}</span>`:''}${!ok?`<span class="tag">${T("soldOut")}</span>`:''}${off(p)?`<span class="tag sl">${off(p)}</span>`:''}
         <div class="a">${frameHTML(f[0],0,c.hex)}</div><div class="b">${frameHTML(f[1],1,c.hex)}</div>
-        <span class="hint">${p.video?'VIDEO · ':''}${T("dragHint")}</span></div>
+        <span class="hint">${p.video?T("video")+' · ':''}${T("dragHint")}</span></div>
       <h3>${p.name}</h3><div class="cat">${(SETTINGS.categories.find(x=>x.id===p.category)||{}).name||""}</div>
       <div class="pr">${priceHTML(p)}</div>
       <div class="dots">${p.colours.map(x=>`<i class="dot" style="background:${x.hex}"></i>`).join("")}</div></button>`}).join(""):'<div class="empty">No wallets match. Add products from the Admin Dashboard.</div>';
@@ -571,7 +621,7 @@ function renderProduct(){
   $("#pbody").innerHTML=`
   <div class="gal">
     <div class="thumbs">${f.map((im,i)=>`<button data-th="${i}" class="${i===idx&&mode==='photos'?'on':''}" aria-label="Photo ${i+1}">${frameHTML(im,i,sel.hex)}</button>`).join("")}
-      ${p.video?`<button data-th="v" class="${mode==='video'?'on':''}" style="display:grid;place-items:center;background:#000;color:#fff;font-size:11px">▶ VIDEO</button>`:""}</div>
+      ${p.video?`<button data-th="v" class="${mode==='video'?'on':''}" style="display:grid;place-items:center;background:#000;color:#fff;font-size:11px">▶ ${T("video")}</button>`:""}</div>
     <div class="view" id="view">
       ${mode==="video"&&p.video?`<video src="${p.video}" controls autoplay muted loop playsinline></video>`:
         f.map((im,i)=>`<div class="layer" data-l="${i}" style="opacity:${i===idx?1:0}">${frameHTML(im,i,sel.hex)}</div>`).join("")+
@@ -651,7 +701,7 @@ function totals(){
 function drawCart(checkout){
   $("#cnt").textContent=cart.reduce((s,i)=>s+i.qty,0);
   $("#cbody").innerHTML=cart.length?cart.map((i,n)=>`<div class="ci"><div class="t">${frameHTML(i.img,0,i.hex)}</div>
-    <div><b style="font-weight:500">${i.name}</b><small>Colour: ${i.colour}</small><small>Qty: ${i.qty}</small><button class="rm" data-rm="${n}">${T("remove")}</button></div>
+    <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small><small>${T("cartQty")}: ${i.qty}</small><button class="rm" data-rm="${n}">${T("remove")}</button></div>
     <div>${money(i.price)}</div></div>`).join(""):'<p class="empty">${T("emptyCart")}</p>';
   const t=totals();
   $("#cfoot").innerHTML=cart.length?`
@@ -743,6 +793,9 @@ function applyTheme(){
   const m={"--primary":t.primary,"--secondary":t.secondary,"--bg":t.bg,"--text":t.text,"--btn":t.btn,"--btn-text":t.btnText,"--header":t.header,"--footer":t.footer,"--accent":t.accent,
     "--radius":(+t.radius||0)+"px","--space":`clamp(${64*sp}px,${9*sp}vw,${120*sp}px)`,"--hs":(+t.headSize||100)/100,"--bs":(+t.bodySize||15)+"px",
     "--head":`'${t.headFont}',Georgia,serif`,"--body":`'${t.bodyFont}',system-ui,sans-serif`,"--k":1/(+CFG.motion.speed||1)};
+  const sc=CFG.secColors,z=CFG.sizes,P=v=>(+v||100)/100;
+  Object.assign(m,{"--head-text":sc.headText,"--ann-bg":sc.annBg,"--ann-text":sc.annText,"--hero-bg":sc.heroBg,"--hero-text":sc.heroText,"--tick-bg":sc.tickBg,"--tick-text":sc.tickText,"--sale-bg":sc.saleBg,"--sale-text":sc.saleText,"--shop-bg":sc.shopBg,"--shop-text":sc.shopText,"--about-bg":sc.aboutBg,"--about-text":sc.aboutText,"--foot-text":sc.footText,"--pdp-bg":sc.pdpBg,
+    "--z-hero":P(z.heroTitle),"--z-herod":P(z.heroDesc),"--z-sec":P(z.sectionTitle),"--z-nav":P(z.nav),"--z-btn":P(z.button),"--z-ann":P(z.announce),"--z-tick":P(z.ticker),"--z-card":P(z.cardName),"--z-price":P(z.cardPrice),"--z-pdp":P(z.pdpTitle),"--z-pdpp":P(z.pdpPrice),"--z-about":P(z.about),"--z-foot":P(z.footer)});
   for(const k in m)r.setProperty(k,m[k]);
   loadFonts([t.headFont,t.bodyFont]);
   document.title=CFG.brand.name+" — Premium Wallets";
@@ -750,34 +803,58 @@ function applyTheme(){
   $$(".logo[data-close]").forEach(a=>a.innerHTML=logoHTML(CFG.brand.logoUrl,CFG.brand.logoHeight));
   $("#flogo").innerHTML=logoHTML(CFG.brand.footerLogoUrl||CFG.brand.logoUrl,CFG.brand.footerLogoHeight);
   $("#grid").classList.toggle("g3",+t.columns===3);
-  $("#loader span").textContent=CFG.motion.loaderText;
+  $("#loader span").innerHTML=CFG.motion.loaderImage?`<img src="${esc(CFG.motion.loaderImage)}" alt="" style="height:80px;width:auto">`:esc(CFG.motion.loaderText);
 }
 function applyTexts(){
   $$("[data-t]").forEach(e=>e.textContent=T(e.dataset.t));
   $$("[data-tp]").forEach(e=>e.placeholder=T(e.dataset.tp));
 }
 function applySections(){
-  const map={ticker:$(".ticker"),sale:$("#sale"),wallets:$("#wallets"),about:$("#about")},main=$("#top");
+  const map={ticker:$(".ticker"),sale:$("#sale"),banner:$("#banner"),wallets:$("#wallets"),about:$("#about")},main=$("#top");
   (CFG.sections||[]).forEach(x=>{const el=map[x.id];if(!el)return;main.appendChild(el);el.hidden=!x.show});
 }
 function applyMotion(){
   Object.keys(CFG.motion).forEach(k=>{if(typeof CFG.motion[k]==="boolean")document.body.classList.toggle("no-"+k,CFG.motion[k]===false)});
+  if(PREVIEW)document.body.classList.add("no-loader");
 }
 function maskHeadings(){$$(".head h2,.about h2").forEach(h=>h.innerHTML=`<span class="mk">${esc(h.textContent)}</span>`)}
+const isVideo=u=>/\.(mp4|webm|mov)(\?|$)/i.test(u||"");
+function mediaEl(u,extra=""){return isVideo(u)?`<video src="${esc(u)}" muted loop playsinline preload="metadata" ${RM.matches?"":"autoplay"} ${extra}></video>`:`<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`}
+function applyLayers(){
+  const h=CFG.hero,box=$("#hlayers");
+  $(".hero").style.setProperty("--bgo",(+h.bgOpacity||0)/100);
+  const bg=h.bgVideo?`<video class="hbg" src="${esc(h.bgVideo)}" muted loop playsinline ${RM.matches?"":"autoplay"}></video>`:h.bgImage?`<img class="hbg" src="${esc(h.bgImage)}" alt="">`:"";
+  box.innerHTML=bg+(h.layers||[]).filter(l=>l.src).map(l=>`<div class="hl ${l.z==="back"?"back":"front"} an-${esc(l.anim)}" style="left:${+l.x}%;top:${+l.y}%;width:${+l.w}%;opacity:${(+l.opacity)/100}">${mediaEl(l.src)}</div>`).join("");
+}
+function applyBanner(){
+  const b=CFG.banner,el=$("#banner");
+  el.style.setProperty("--bh",(+b.height||60)+"vh");el.style.setProperty("--bo",(+b.overlay||0)/100);el.style.color=b.textColor;
+  $("#bmedia").innerHTML=b.media?(isVideo(b.media)?`<video src="${esc(b.media)}" ${b.poster?`poster="${esc(b.poster)}"`:""} muted loop playsinline preload="metadata" ${RM.matches?"":"autoplay"}></video>`:`<img src="${esc(b.media)}" alt="" loading="lazy">`):"";
+  $("#btxt").innerHTML=(b.title?`<h2>${esc(b.title)}</h2>`:"")+(b.text?`<p>${esc(b.text)}</p>`:"")+(b.btnText?`<a class="btn" href="${esc(safeUrl(b.btnLink))}"><span>${esc(b.btnText)}</span></a>`:"");
+}
+function applyFooter(){
+  const c=CFG.contact,li=[["instagram",c.instagram],["facebook",c.facebook],["tiktok",c.tiktok],["youtube",c.youtube]].filter(x=>x[1]).map(x=>`<li><a href="${esc(safeUrl(x[1]))}" target="_blank" rel="noopener">${esc(T(x[0]))}</a></li>`);
+  if(c.whatsapp)li.push(`<li><a href="https://wa.me/${esc(String(c.whatsapp).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(T("whatsapp"))}</a></li>`);
+  $("#follow").innerHTML=li.join("");
+  $("#fcontact").innerHTML=[c.email&&`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`,c.phone&&`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`,c.address&&esc(c.address)].filter(Boolean).map(x=>`<li>${x}</li>`).join("");
+}
+const PREVIEW=/[?&]preview/.test(location.search);
 function applyAll(){
-  buildSettings();applyTheme();applyTexts();applySettings();drawSale();drawCats();drawGrid();drawCart();
+  buildSettings();applyTheme();applyTexts();applySettings();applyLayers();applyBanner();applyFooter();drawSale();drawCats();drawGrid();drawCart();
   applySections();applyMotion();maskHeadings();observe();
 }
 addEventListener("message",e=>{
-  if(e.origin!==location.origin||!e.data||!e.data.raasPreview)return;
-  CFG=window.RAAS_merge(D,e.data.raasPreview);applyAll();
+  if(e.source!==window.parent||!e.data)return;
+  if(e.data.raasPreview){CFG=window.RAAS_merge(D,e.data.raasPreview);applyAll()}
+  if("raasScroll" in e.data){const el=e.data.raasScroll?document.querySelector(e.data.raasScroll):null;
+    if(el&&el.offsetParent)el.scrollIntoView({behavior:"smooth",block:"start"});else scrollTo({top:0,behavior:"smooth"})}
 });
 
 /* init */
 const t0=Date.now();
 (async()=>{
   await loadData();applyAll();
-  setTimeout(reveal,RM.matches||CFG.motion.loader===false?0:Math.max(0,(+CFG.motion.loaderMs||0)-(Date.now()-t0)));
+  setTimeout(reveal,PREVIEW||RM.matches||CFG.motion.loader===false?0:Math.max(0,(+CFG.motion.loaderMs||0)-(Date.now()-t0)));
 })();
 </script>
 </body>

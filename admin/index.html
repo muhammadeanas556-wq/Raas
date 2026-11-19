@@ -59,13 +59,15 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 .im button{position:absolute;top:2px;background:#fff;border:1px solid #ccc;border-radius:3px;font-size:10px;padding:0 4px;cursor:pointer}
 .im .x{right:2px}.im .m{left:2px}
 .addimg{width:74px;height:74px;border:1px dashed #aaa;border-radius:4px;display:grid;place-items:center;font-size:11px;color:var(--mut);cursor:pointer;text-align:center}
-.site{display:grid;grid-template-columns:minmax(320px,430px) 1fr;gap:16px;align-items:start}
+.site{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:16px;align-items:start}
 .site .pane{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
 .pvw{background:#fff;border:1px solid var(--line);border-radius:6px;position:sticky;top:12px;overflow:hidden}
 .pvw iframe{width:100%;height:calc(100vh - 120px);border:0;display:block;margin:0 auto;transition:width .3s}
 .pvw.m iframe{width:390px;border-inline:1px solid var(--line)}
 .cp{display:flex;gap:8px}
 .mrow{display:flex;gap:8px;margin:6px 0}
+.lay{border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;background:#fcfcfc}
+.lay label{font-size:12px;color:var(--mut);display:grid;gap:2px}
 .mrow2{display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;margin-bottom:6px;align-items:center}
 .tg{display:flex;gap:10px;align-items:center;margin-bottom:12px}
 #toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,30px);background:#000;color:#fff;padding:12px 20px;border-radius:6px;opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:90vw}
@@ -374,12 +376,16 @@ V.site=async()=>{
   S.draft=RAAS_merge(RAAS_DEFAULTS,(r.data&&r.data.data)||{});S.grp=S.grp||RAAS_SCHEMA[0].id;
   $("#view").innerHTML=`<div class="site"><div class="pane"><div class="panel"><select id="grp" data-chg="grp">${RAAS_SCHEMA.map(g=>`<option value="${g.id}" ${g.id===S.grp?"selected":""}>${g.title}</option>`).join("")}</select></div><div class="panel" id="sform"></div>
    <div class="acts" style="margin:0 0 20px;justify-content:flex-start"><button class="b" data-act="savesite">Save &amp; publish</button><button class="b o" data-act="discard">Discard changes</button><button class="b o" data-act="resetgrp">Reset section to defaults</button></div></div>
-   <div class="pvw" id="pvw"><div class="bar" style="padding:8px;margin:0"><button class="b o s" data-act="pvd">Desktop</button><button class="b o s" data-act="pvm">Phone</button></div><iframe id="pv" src="../index.html"></iframe></div></div>`;
-  $("#pv").onload=pv;drawGroup();
+   <div class="pvw" id="pvw"><div class="bar" style="padding:8px;margin:0"><button class="b o s" data-act="pvd">Desktop</button><button class="b o s" data-act="pvm">Phone</button><a class="b o s" href="../index.html" target="_blank" style="text-decoration:none">Open site</a><span class="mut" style="align-self:center;font-size:12px">Live preview: changes show here instantly</span></div><iframe id="pv" src="../index.html?preview=1"></iframe></div></div>`;
+  $("#pv").onload=()=>{pv();pvScroll()};drawGroup();
 };
-CHG.grp=t=>{S.grp=t.value;drawGroup()};
+CHG.grp=t=>{S.grp=t.value;drawGroup();pvScroll()};
 ACT.pvd=()=>$("#pvw").classList.remove("m");ACT.pvm=()=>$("#pvw").classList.add("m");
-function pv(){clearTimeout(pv.t);pv.t=setTimeout(()=>{const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasPreview:S.draft},location.origin)},150)}
+function pv(){clearTimeout(pv.t);pv.t=setTimeout(()=>{const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasPreview:JSON.parse(JSON.stringify(S.draft))},"*")},120)}
+const SCR={hero:"#top",layers:"#top",motion:"#top",ticker:".ticker",sections:"#wallets",sale:"#sale",banner:"#banner",about:"#about",contact:"footer",policies:"footer",footer:"footer",delivery:"#wallets",colours:"",seccolors:"",sizes:"",type:"",brand:"",announcement:"",text:""};
+function pvScroll(){const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasScroll:SCR[S.grp]||""},"*")}
+const SECN={ticker:"Moving text band",sale:"Sale strip",banner:"Motion banner",wallets:"Products",about:"About"};
+const isVid=u=>/\.(mp4|webm|mov)(\?|$)/i.test(u||"");
 function drawGroup(){
   const g=RAAS_SCHEMA.find(x=>x.id===S.grp);$("#sform").innerHTML=`<h3>${g.title}</h3>`+g.fields.map(fld).join("");pv();
 }
@@ -395,9 +401,13 @@ function fld(f){
     case"toggle":return `<label class="tg"><input type="checkbox" ${k} data-t="toggle" ${v?"checked":""}> ${esc(f.l)}</label>`;
     case"select":return `<label class="f">${L}<select ${k} data-t="${typeof f.opts[0]==="number"?"numsel":"select"}">${f.opts.map(o=>`<option ${String(o)===String(v)?"selected":""}>${o}</option>`).join("")}</select></label>`;
     case"list":return `<label class="f">${L}<textarea rows="4" ${k} data-t="list">${esc((v||[]).join("\n"))}</textarea></label>`;
-    case"image":case"video":return `<div class="f">${L}<input ${k} value="${esc(v)}" placeholder="https://… or upload"><div class="mrow"><label class="b o s">Upload<input type="file" hidden accept="${f.t==="video"?"video/*":"image/*"}" data-chg="siteup" data-key="${f.k}" data-kind="${f.t}"></label><button class="b o s" data-act="clearmedia" data-key="${f.k}">Clear</button></div>${v?(f.t==="video"?`<video src="${esc(v)}" muted controls style="height:80px"></video>`:`<img src="${esc(v)}" style="height:64px;background:#eee">`):""}</div>`;
+    case"image":case"video":case"media":return `<div class="f">${L}<input ${k} value="${esc(v)}" placeholder="https://… or upload"><div class="mrow"><label class="b o s">Upload<input type="file" hidden accept="${f.t==="video"?"video/*":f.t==="media"?"image/*,video/*":"image/*"}" data-chg="siteup" data-key="${f.k}" data-kind="${f.t}"></label><button class="b o s" data-act="clearmedia" data-key="${f.k}">Clear</button></div>${v?(isVid(v)?`<video src="${esc(v)}" muted controls style="height:80px"></video>`:`<img src="${esc(v)}" style="height:64px;background:#eee">`):""}</div>`;
+    case"layers":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="lay"><div class="mrow2" style="grid-template-columns:1fr auto auto"><input data-li="${i}" data-lf="src" placeholder="Image / GIF / video URL" value="${esc(x.src||"")}"><label class="b o s" style="display:inline-grid">Upload<input type="file" hidden accept="image/*,video/*" data-chg="layerup" data-i="${i}"></label><button class="b d s" data-act="layerdel" data-i="${i}">Remove</button></div>
+      <div class="r2"><label>Left (%) <input type="range" min="0" max="100" data-li="${i}" data-lf="x" value="${x.x}"><output>${x.x}</output></label><label>Top (%) <input type="range" min="0" max="100" data-li="${i}" data-lf="y" value="${x.y}"><output>${x.y}</output></label>
+      <label>Size (% of width) <input type="range" min="3" max="100" data-li="${i}" data-lf="w" value="${x.w}"><output>${x.w}</output></label><label>Opacity (%) <input type="range" min="5" max="100" data-li="${i}" data-lf="opacity" value="${x.opacity}"><output>${x.opacity}</output></label>
+      <label>Movement <select data-li="${i}" data-lf="anim">${["float","spin","pulse","drift","none"].map(o=>`<option ${o===x.anim?"selected":""}>${o}</option>`).join("")}</select></label><label>Position <select data-li="${i}" data-lf="z">${["front","back"].map(o=>`<option ${o===x.z?"selected":""}>${o}</option>`).join("")}</select></label></div></div>`).join("")}<button class="b o s" data-act="layeradd">+ Add motion graphic</button></div>`;
     case"views":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="mrow2"><input data-vi="${i}" data-vf="label" placeholder="Label (Back)" value="${esc(x.label||"")}"><input data-vi="${i}" data-vf="src" placeholder="Image URL" value="${esc(x.src||"")}"><label class="b o s">Upload<input type="file" hidden accept="image/*" data-chg="viewup" data-i="${i}"></label><button class="b d s" data-act="viewdel" data-i="${i}">✕</button></div>`).join("")}<button class="b o s" data-act="viewadd">+ Add view</button></div>`;
-    case"sections":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="mrow2" style="grid-template-columns:1fr auto auto auto"><b>${x.id}</b><label><input type="checkbox" data-si="${i}" ${x.show?"checked":""}> show</label><button class="b o s" data-act="secmv" data-i="${i}" data-d="-1">↑</button><button class="b o s" data-act="secmv" data-i="${i}" data-d="1">↓</button></div>`).join("")}</div>`;
+    case"sections":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="mrow2" style="grid-template-columns:1fr auto auto auto"><b>${SECN[x.id]||x.id}</b><label><input type="checkbox" data-si="${i}" ${x.show?"checked":""}> show</label><button class="b o s" data-act="secmv" data-i="${i}" data-d="-1">↑</button><button class="b o s" data-act="secmv" data-i="${i}" data-d="1">↓</button></div>`).join("")}</div>`;
   }
   return "";
 }
@@ -409,6 +419,7 @@ function coerce(t,el){
 }
 document.addEventListener("input",e=>{
   const t=e.target,form=t.closest("#sform");if(!form)return;
+  if(t.dataset.li!=null){const Ly=S.draft.hero.layers[+t.dataset.li],f=t.dataset.lf;Ly[f]=["x","y","w","opacity"].includes(f)?+t.value:t.value;const o=t.parentElement.querySelector("output");if(o)o.textContent=t.value;return pv()}
   if(t.dataset.vi!=null){S.draft.hero.views[+t.dataset.vi][t.dataset.vf]=t.value;return pv()}
   if(t.dataset.si!=null){S.draft.sections[+t.dataset.si].show=t.checked;return pv()}
   const k=t.dataset.k;if(!k)return;
@@ -421,6 +432,9 @@ document.addEventListener("change",e=>{const t=e.target;if(t.closest("#sform")&&
 CHG.siteup=async t=>{if(!t.files[0])return;toast("Uploading…");setP(S.draft,t.dataset.key,await up(t.files[0],t.dataset.kind==="video"?"video":"site"));drawGroup();toast("Uploaded")};
 ACT.clearmedia=a=>{setP(S.draft,a.dataset.key,"");drawGroup()};
 CHG.viewup=async t=>{if(!t.files[0])return;toast("Uploading…");S.draft.hero.views[+t.dataset.i].src=await up(t.files[0],"site");drawGroup();toast("Uploaded")};
+CHG.layerup=async t=>{if(!t.files[0])return;toast("Uploading…");S.draft.hero.layers[+t.dataset.i].src=await up(t.files[0],"site");drawGroup();toast("Uploaded")};
+ACT.layeradd=()=>{S.draft.hero.layers.push({src:"",x:50,y:50,w:20,opacity:100,anim:"float",z:"front"});drawGroup()};
+ACT.layerdel=a=>{S.draft.hero.layers.splice(+a.dataset.i,1);drawGroup()};
 ACT.viewadd=()=>{S.draft.hero.views.push({label:"",src:""});drawGroup()};
 ACT.viewdel=a=>{S.draft.hero.views.splice(+a.dataset.i,1);drawGroup()};
 ACT.secmv=a=>{const i=+a.dataset.i,j=i+ +a.dataset.d,s=S.draft.sections;if(j<0||j>=s.length)return;[s[i],s[j]]=[s[j],s[i]];drawGroup()};
