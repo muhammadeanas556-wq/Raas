@@ -1,4 +1,7 @@
-/* Paste your Supabase project values here (Project Settings > API).
-   The anon key is meant to be public: security comes from the row-level-security
-   rules in supabase/schema.sql, not from hiding this key. Never put the service_role key here. */
-window.RAAS_SUPABASE = { url: "", anonKey: "" };
+
+/* RAAS Supabase Configuration */
+
+window.RAAS_SUPABASE = {
+  url: "https://bpeuvlqoneauyyfzxyhv.supabase.co",
+  anonKey: "sb_publishable_JRPpMzyY3c3svTgdYraxaw_jKeW5oSH"
+};
