@@ -187,9 +187,9 @@ buildMedia=function(){
      background colour is removed. Only background that is CONNECTED to the frame edge is removed (flood fill), so dark
      or light parts inside the wallet are kept even if they are close to the background colour. Edges are de-fringed. */
 const VS="attribute vec2 p;varying vec2 u;void main(){u=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}";
-const FS="precision mediump float;varying vec2 u;uniform sampler2D v;uniform sampler2D m;uniform vec3 k;uniform float t;uniform float s;"+
+const FS="precision mediump float;varying vec2 u;uniform sampler2D v;uniform sampler2D m;uniform vec3 k;uniform float t;uniform float s;uniform float dk;"+
   "void main(){vec4 c=texture2D(v,u);float ca=smoothstep(t,t+s,distance(c.rgb,k));float mm=texture2D(m,u).r;"+
-  "float band=clamp(mm*2.,0.,1.);float core=smoothstep(.75,.98,mm);float a=(1.-band*(1.-ca))*(1.-core);"+
+  "float band=mix(clamp(mm*2.,0.,1.),1.,dk);float core=smoothstep(.75,.98,mm)*(1.-dk);float a=(1.-band*(1.-ca))*(1.-core);"+
   "vec3 f=a>.02?clamp((c.rgb-k*(1.-a))/a,0.,1.):c.rgb;gl_FragColor=vec4(f*a,a);}";
 function makeGL(cv){
   const gl=cv.getContext("webgl",{premultipliedAlpha:true,alpha:true,antialias:false,preserveDrawingBuffer:false});if(!gl)return null;
@@ -201,12 +201,12 @@ function makeGL(cv){
     [[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE],[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR]].forEach(p=>gl.texParameteri(gl.TEXTURE_2D,p[0],p[1]));return t};
   const tv=tex(0),tm=tex(1);gl.uniform1i(gl.getUniformLocation(pr,"v"),0);gl.uniform1i(gl.getUniformLocation(pr,"m"),1);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);gl.clearColor(0,0,0,0);
-  return {gl,tv,tm,uk:gl.getUniformLocation(pr,"k"),ut:gl.getUniformLocation(pr,"t"),us:gl.getUniformLocation(pr,"s")};
+  return {gl,tv,tm,uk:gl.getUniformLocation(pr,"k"),ut:gl.getUniformLocation(pr,"t"),us:gl.getUniformLocation(pr,"s"),ud:gl.getUniformLocation(pr,"dk")};
 }
 function initWallet(box){
   if(box._on)return;box._on=1;
   const v=box.querySelector("video"),cv=box.querySelector("canvas"),wantAuto=box.dataset.auto==="1";
-  let mode=box.dataset.mode||"auto",G=null,key=null,mw=0,mh=0,sx=null,sctx=null,fr=null,fctx=null,mask=null,near=null,q=null,decided=false;
+  let mode=box.dataset.mode||"auto",G=null,key=null,dark=false,mw=0,mh=0,sx=null,sctx=null,fr=null,fctx=null,mask=null,near=null,q=null,decided=false;
   const tol=Math.min(.9,Math.max(.02,(+box.dataset.tol||18)/100)),soft=Math.max(.05,tol*.8);
   const set=st=>{box.classList.remove("native","key","plain");box.classList.add(st);box.classList.add("ok")};
   if(mode==="none"){set("native");decided=true}
@@ -231,7 +231,17 @@ function initWallet(box){
     const ms=Math.min(1,200/Math.max(vw,vh));mw=Math.max(16,Math.round(vw*ms));mh=Math.max(16,Math.round(vh*ms));
     sx=document.createElement("canvas");sx.width=mw;sx.height=mh;sctx=sx.getContext("2d",{willReadFrequently:true});
     mask=new Uint8Array(mw*mh);near=new Uint8Array(mw*mh);q=new Int32Array(mw*mh);
-    G.gl.uniform3f(G.uk,key[0]/255,key[1]/255,key[2]/255);G.gl.uniform1f(G.ut,tol);G.gl.uniform1f(G.us,soft);
+    /* Black video background + dark website background (e.g. a black leather wallet filmed on black):
+       black leather and black background cannot be told apart by an edge-flood mask, which punched blocky holes
+       into the wallet. Here every pixel is blended by its own colour only (no mask): the composite is
+       video + (1-alpha)*(page - key), so a wallet pixel is never shown darker than in the video, black background
+       melts into the page colour, and there are no holes, blocks or flicker. */
+    const pb=/#([0-9a-f]{6})/i.exec(getComputedStyle(document.documentElement).getPropertyValue("--bg")||""),pn=pb?parseInt(pb[1],16):0;
+    const pageL=pb?(.2126*(pn>>16)+.7152*(pn>>8&255)+.0722*(pn&255))/255:0;
+    dark=Math.max(key[0],key[1],key[2])<=48&&pageL<.25;
+    G.gl.uniform3f(G.uk,key[0]/255,key[1]/255,key[2]/255);
+    G.gl.uniform1f(G.ut,dark?.03:tol);G.gl.uniform1f(G.us,dark?.06+tol*.2:soft);G.gl.uniform1f(G.ud,dark?1:0);
+    if(dark){mask.fill(0);G.gl.activeTexture(G.gl.TEXTURE1);G.gl.bindTexture(G.gl.TEXTURE_2D,G.tm);G.gl.texImage2D(G.gl.TEXTURE_2D,0,G.gl.LUMINANCE,mw,mh,0,G.gl.LUMINANCE,G.gl.UNSIGNED_BYTE,mask)}
     set("key");draw();loop();
   }
   function buildMask(){
@@ -253,10 +263,10 @@ function initWallet(box){
   }
   function draw(){
     if(!G||v.readyState<2)return;
-    try{fctx.clearRect(0,0,fr.width,fr.height);fctx.drawImage(v,0,0,fr.width,fr.height);buildMask()}catch(e){console.warn("RAAS wallet",e);set("plain");G=null;return}
+    try{fctx.clearRect(0,0,fr.width,fr.height);fctx.drawImage(v,0,0,fr.width,fr.height);if(!dark)buildMask()}catch(e){console.warn("RAAS wallet",e);set("plain");G=null;return}
     const gl=G.gl;
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,G.tv);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,fr);
-    gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,G.tm);gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE,mw,mh,0,gl.LUMINANCE,gl.UNSIGNED_BYTE,mask);
+    if(!dark){gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,G.tm);gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE,mw,mh,0,gl.LUMINANCE,gl.UNSIGNED_BYTE,mask)}
     gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
   }
   let last=-1;
