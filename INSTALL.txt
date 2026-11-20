@@ -1,0 +1,16 @@
+RAAS ADMIN UPGRADE - what to replace (3 files, no database change needed)
+
+1) admin/index.html          REPLACE  your existing admin/index.html
+2) shared/raas-extras.js     NEW FILE put it in your existing shared/ folder (next to config.js)
+3) index.html                REPLACE  your existing index.html   (storefront)
+   The ONLY change in this file is one added line just before </body>:
+       <script src="shared/raas-extras.js"></script>
+   If you prefer, keep your own index.html and just add that line yourself.
+
+Do NOT touch: shared/config.js, shared/supabase-config.js, supabase/schema.sql.
+No SQL to run. Nothing in your database, products, orders, images or settings is deleted.
+All new settings are saved inside your existing site_config row (key "ext").
+
+New Admin menu entries (owner login only):  "360 Wallet Display"  and  "Visual Editor".
+Product form: new Discount box (calculator, on/off, dates, remove).
+Upload limit for videos is 50 MB (Supabase free plan limit); MP4 or WebM only.

@@ -72,6 +72,10 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 .tg{display:flex;gap:10px;align-items:center;margin-bottom:12px}
 #toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,30px);background:#000;color:#fff;padding:12px 20px;border-radius:6px;opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:90vw}
 #toast.on{opacity:1;transform:translate(-50%,0)}#toast.bad{background:#b00020}
+.tbar{display:flex;gap:6px;flex-wrap:wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.b.on{background:#000;color:#fff;border-color:#000}.b.o.on{background:#000;color:#fff}
+.pvw .bar{border-bottom:1px solid var(--line)}.panel a{color:#2563eb}
+#pdbox{border:1px solid var(--line);border-radius:6px;padding:12px;margin:12px 0;background:#fcfcfc;transition:opacity .2s}
 @media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}aside .lg{width:100%}.grid2,.site,.r2,.r3{grid-template-columns:1fr}.site .pane,.pvw{position:static;max-height:none}.pvw iframe{height:70vh}.colb .h{grid-template-columns:1fr 56px}}
 @media print{body *{visibility:hidden}.printable,.printable *{visibility:visible}.printable{position:absolute;left:0;top:0;width:100%}}
 </style>
@@ -93,6 +97,7 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="../shared/supabase-config.js"></script>
 <script src="../shared/config.js"></script>
+<script src="../shared/raas-extras.js"></script>
 <script>
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=x=>String(x??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -111,7 +116,7 @@ if(!cfgS.url||!cfgS.anonKey){document.body.innerHTML='<p style="padding:40px;fon
 const sb=supabase.createClient(cfgS.url,cfgS.anonKey);
 let ME=null,S={};
 const V={};
-const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons"],["site","Website"],["account","Account"]];
+const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons"],["wallet","360° Wallet Display"],["editor","Visual Editor"],["site","Website"],["account","Account"]];
 const STATUSES=["pending","confirmed","processing","shipped","delivered","cancelled"];
 
 async function up(file,folder="uploads"){
@@ -130,7 +135,7 @@ async function start(){
   if(error||!a){await sb.auth.signOut();return showLogin("This account is not an administrator.")}
   ME={email:session.user.email,role:a.role};
   $("#login").hidden=true;$("#shell").hidden=false;$("#who").textContent=ME.email+" · "+ME.role;
-  $("#nav").innerHTML='<div class="lg">RAAS</div>'+NAV.filter(n=>!(ME.role!=="owner"&&n[0]==="site")).map(n=>`<button data-go="${n[0]}">${n[1]}</button>`).join("")+'<button data-act="logout" style="margin-top:auto">Sign out</button>';
+  $("#nav").innerHTML='<div class="lg">RAAS</div>'+NAV.filter(n=>!(ME.role!=="owner"&&["site","wallet","editor"].includes(n[0]))).map(n=>`<button data-go="${n[0]}">${n[1]}</button>`).join("")+'<button data-act="logout" style="margin-top:auto">Sign out</button>';
   go(location.hash.slice(1)||"dashboard");
 }
 function showLogin(msg){$("#shell").hidden=true;$("#login").hidden=false;$("#lerr").textContent=msg||""}
@@ -194,9 +199,9 @@ function drawProds(){
   $("#plist").innerHTML=`<table><tr><th></th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Active</th><th>Featured</th><th></th></tr>${rows.map(p=>{
     const cs=[...p.product_colours].sort((a,b)=>a.sort-b.sort),img=cs[0]&&cs[0].images[0],st=cs.reduce((a,c)=>a+c.stock,0);
     return `<tr><td>${img?`<img class="th" src="${esc(img)}">`:'<div class="th"></div>'}</td><td><b>${esc(p.name)}</b><br><span class="mut">${cs.length} colour${cs.length===1?"":"s"}</span></td><td>${esc(p.categories?p.categories.name:"—")}</td>
-    <td>${p.price==null?'<span class="mut">not set</span>':money(p.price)}${p.discount_value!=null?`<br><span class="tag">${p.discount_type==="percent"?p.discount_value+"% off":"PKR "+p.discount_value+" off"}</span>`:""}</td>
+    <td>${discCell(p)}</td>
     <td>${st}</td><td><input type="checkbox" ${p.active?"checked":""} data-chg="ptoggle" data-id="${p.id}" data-f="active"></td><td><input type="checkbox" ${p.featured?"checked":""} data-chg="ptoggle" data-id="${p.id}" data-f="featured"></td>
-    <td style="white-space:nowrap"><button class="b o s" data-act="editprod" data-id="${p.id}">Edit</button> <button class="b o s" data-act="dupprod" data-id="${p.id}">Duplicate</button> <button class="b d s" data-act="delprod" data-id="${p.id}">Delete</button></td></tr>`}).join("")||'<tr><td colspan="8" class="mut">No products yet. Click "Add product".</td></tr>'}</table>`;
+    <td style="white-space:nowrap"><button class="b o s" data-act="editprod" data-id="${p.id}">Edit</button> <button class="b o s" data-act="dupprod" data-id="${p.id}">Duplicate</button> ${p.discount_value!=null?`<button class="b o s" data-act="rmdiscrow" data-id="${p.id}">Remove discount</button> `:""}<button class="b d s" data-act="delprod" data-id="${p.id}">Delete</button></td></tr>`}).join("")||'<tr><td colspan="8" class="mut">No products yet. Click "Add product".</td></tr>'}</table>`;
 }
 CHG.ptoggle=async t=>{const {error}=await sb.from("products").update({[t.dataset.f]:t.checked}).eq("id",t.dataset.id);if(error){t.checked=!t.checked;throw error}
   S.prods.find(p=>p.id===t.dataset.id)[t.dataset.f]=t.checked;toast("Saved")};
@@ -217,18 +222,21 @@ function prodForm(id){
   modal(`<h2>${id?"Edit product":"New product"}</h2>
    ${L("Name",`<input id="pn" value="${esc(p.name)}">`)}
    <div class="r2">${L("Category",`<select id="pcat"><option value="">— none —</option>${S.cats.map(c=>`<option value="${c.id}" ${p.category_id===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`)}
-   ${L("Price (PKR)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
+   ${L("Original price (PKR)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
    ${L("Description",`<textarea id="pdesc" rows="3">${esc(p.description)}</textarea>`)}
-   <div class="r3">${L("Discount",`<select id="pdt"><option value="">None</option><option value="percent" ${p.discount_type==="percent"?"selected":""}>Percent (%)</option><option value="fixed" ${p.discount_type==="fixed"?"selected":""}>Fixed (PKR)</option></select>`)}
-   ${L("Starts",`<input id="pds" type="datetime-local" value="${p.discount_start?toLocal(p.discount_start):""}">`)}${L("Ends",`<input id="pde" type="datetime-local" value="${p.discount_end?toLocal(p.discount_end):""}">`)}</div>
-   ${L("Discount value",`<input id="pdv" type="number" min="0" value="${p.discount_value??""}">`)}
+   <div id="pdbox"><h3 style="margin-bottom:8px">Discount</h3>
+    <label class="tg"><input type="checkbox" id="pden" ${p.discount_value!=null?"checked":""}> Discount enabled</label>
+    <div class="r2">${L("Type",`<select id="pdt"><option value="percent" ${p.discount_type!=="fixed"?"selected":""}>Percentage (%)</option><option value="fixed" ${p.discount_type==="fixed"?"selected":""}>Fixed amount (PKR)</option></select>`)}
+    ${L("Discount value",`<input id="pdv" type="number" min="0" value="${p.discount_value??""}">`)}</div>
+    <div class="r2">${L("Starts (optional)",`<input id="pds" type="datetime-local" value="${p.discount_start?toLocal(p.discount_start):""}">`)}${L("Ends (optional)",`<input id="pde" type="datetime-local" value="${p.discount_end?toLocal(p.discount_end):""}">`)}</div>
+    <p id="pcalc" style="margin:4px 0 10px"></p><button class="b d s" data-act="rmdisc" type="button">Remove discount</button></div>
    ${L("Specifications (one per line, e.g. Material: Leather)",`<textarea id="pspec" rows="3">${esc((p.specs||[]).map(s=>s.k+": "+s.v).join("\n"))}</textarea>`)}
    ${L("Product video (URL or upload)",`<div class="cp"><input id="pvid" value="${esc(p.video_url||"")}" placeholder="https://..."><label class="b o s" style="display:grid;place-items:center;white-space:nowrap">Upload<input type="file" accept="video/*" hidden data-chg="pvup"></label></div>`)}
    <div class="tg"><label><input type="checkbox" id="pact" ${p.active?"checked":""}> Visible on the website</label><label><input type="checkbox" id="pfeat" ${p.featured?"checked":""}> Featured</label></div>
    <h3 style="margin:8px 0">Colours, stock and photos <span class="mut" style="font-weight:400">(3–4 photos per colour; they also drive the rotate view)</span></h3>
    <div id="cols"></div><button class="b o s" data-act="addcol">+ Add colour</button>
    <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="saveprod">Save product</button></div>`,true);
-  drawCols();
+  drawCols();calcDisc();
 }
 CHG.pvup=async t=>{if(!t.files[0])return;toast("Uploading video…");$("#pvid").value=await up(t.files[0],"video");toast("Video uploaded")};
 function drawCols(){
@@ -245,12 +253,17 @@ CHG.imgup=async t=>{toast("Uploading…");const c=S.E.cols[+t.dataset.i];for(con
 ACT.saveprod=async a=>{
   a.disabled=true;
   try{
-    const v=i=>$("#"+i).value,dtp=v("pdt");
+    const v=i=>$("#"+i).value,dtp=$("#pden").checked?v("pdt"):"";
     const row={name:v("pn").trim(),category_id:v("pcat")||null,description:v("pdesc"),price:v("pprice")===""?null:+v("pprice"),
-      discount_type:dtp||null,discount_value:dtp&&v("pdv")!==""?+v("pdv"):null,discount_start:v("pds")?new Date(v("pds")).toISOString():null,discount_end:v("pde")?new Date(v("pde")).toISOString():null,
+      discount_type:dtp||null,discount_value:dtp&&v("pdv")!==""?+v("pdv"):null,discount_start:dtp&&v("pds")?new Date(v("pds")).toISOString():null,discount_end:dtp&&v("pde")?new Date(v("pde")).toISOString():null,
       featured:$("#pfeat").checked,active:$("#pact").checked,video_url:v("pvid").trim()||null,
       specs:v("pspec").split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.indexOf(":");return i<0?{k:l,v:""}:{k:l.slice(0,i).trim(),v:l.slice(i+1).trim()}})};
     if(!row.name)throw new Error("Product name is required");
+    if(dtp){if(row.price==null)throw new Error("Enter the original price before adding a discount");const dv=row.discount_value;
+      if(!(dv>0))throw new Error("Enter a discount value above zero, or switch the discount off");
+      if(dtp==="percent"&&dv>99)throw new Error("A percentage discount must be between 1 and 99");
+      if(dtp==="fixed"&&(!Number.isInteger(dv)||dv>=row.price))throw new Error("A fixed discount must be a whole number smaller than the price");
+      if(row.discount_start&&row.discount_end&&row.discount_end<=row.discount_start)throw new Error("The discount end date must be after the start date")}
     let id=S.E.id;
     if(id){const r=await sb.from("products").update(row).eq("id",id);if(r.error)throw r.error}
     else{const r=await sb.from("products").insert(row).select("id").single();if(r.error)throw r.error;id=r.data.id}
@@ -451,6 +464,228 @@ V.account=async()=>{
 };
 ACT.chpw=async()=>{const a=$("#np").value;if(a.length<8)throw new Error("Use at least 8 characters");if(a!==$("#np2").value)throw new Error("Passwords do not match");
   const r=await sb.auth.updateUser({password:a});if(r.error)throw r.error;$("#np").value=$("#np2").value="";toast("Password updated")};
+
+/* ======================================================================
+   NEW: Visual Editor (live preview, per-element fonts, colours, branding),
+        360° Wallet Display, draft / publish, undo / redo, discount tools
+   ====================================================================== */
+const cl=o=>JSON.parse(JSON.stringify(o));
+const setPE=(o,k,v)=>{const p=k.split(".");let a=o;while(p.length>1){const x=p.shift();if(a[x]==null||typeof a[x]!=="object")a[x]={};a=a[x]}a[p[0]]=v};
+const MAXVID=50*1024*1024,MAXIMG=8*1024*1024;
+const FONTL=(RAAS_SCHEMA.find(g=>g.id==="type").fields[0].opts||[]);
+const DEVW={desktop:"100%",tablet:"768px",mobile:"390px"};
+const normDraft=d=>{d.ext=RAAS_extMerge(d.ext);return d};
+const sameJ=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+
+async function edLoad(){
+  const r=await sb.from("site_config").select("id,data").in("id",["main","draft"]);if(r.error)throw r.error;
+  const m=(r.data.find(x=>x.id==="main")||{}).data||{},d=(r.data.find(x=>x.id==="draft")||{}).data;
+  S.live=normDraft(RAAS_merge(RAAS_DEFAULTS,cl(m)));S.hasDraft=!!d;
+  S.draft=normDraft(RAAS_merge(RAAS_DEFAULTS,cl(d||m)));S.trash=new Set();S.info={};histReset();
+}
+/* ---- undo / redo ---- */
+function histReset(){S.H=[JSON.stringify(S.draft)];S.hp=0}
+function commit(){const j=JSON.stringify(S.draft);if(j===S.H[S.hp]){edStat();return}S.H=S.H.slice(0,S.hp+1);S.H.push(j);if(S.H.length>100)S.H.shift();S.hp=S.H.length-1;histBtns();edStat()}
+let ct;const touch=()=>{pv();clearTimeout(ct);ct=setTimeout(commit,350);edStat(true)};
+function histBtns(){const u=$("#undo"),r=$("#redo");if(u)u.disabled=S.hp<=0;if(r)r.disabled=S.hp>=S.H.length-1}
+function jump(d){clearTimeout(ct);commit();const n=S.hp+d;if(n<0||n>=S.H.length)return;S.hp=n;S.draft=JSON.parse(S.H[n]);edDraw();pv();histBtns();edStat()}
+ACT.undo=()=>jump(-1);ACT.redo=()=>jump(1);
+function edStat(pending){const e=$("#edstat");if(!e)return;
+  const dirty=pending||!sameJ(S.draft,S.live);
+  e.innerHTML=dirty?`<b style="color:#b45309">● Changes not published yet</b>${S.hasDraft?" (a saved draft exists)":""}`:`<span style="color:#047857">● Live website matches this editor</span>`}
+
+V.editor=async()=>{
+  if(ME.role!=="owner")throw new Error("Only owners can change the website");
+  await edLoad();if(S.etab==="wallet"&&S.cur==="editor")S.etab="text";S.etab=S.etab||"text";S.sel=S.sel||"heroTitle";S.dev=S.dev||"desktop";edShell()};
+V.wallet=async()=>{if(ME.role!=="owner")throw new Error("Only owners can change the website");await edLoad();S.etab="wallet";S.dev=S.dev||"desktop";S.sel=S.sel||"heroTitle";edShell()};
+function edShell(){
+  $("#view").innerHTML=`<div class="site"><div class="pane">
+   <div class="panel" style="padding:10px"><div class="tbar"><button class="b o s" id="undo" data-act="undo" title="Undo">↶ Undo</button><button class="b o s" id="redo" data-act="redo" title="Redo">↷ Redo</button>
+     <button class="b o s" data-act="edsave">Save draft</button><button class="b s" data-act="edpub">Publish</button><button class="b d s" data-act="edresetall">Reset all to default</button></div>
+     <div id="edstat" style="font-size:12px;margin-top:8px"></div>
+     ${S.hasDraft?`<div class="mut" style="font-size:12px;margin-top:4px">A saved (unpublished) draft was loaded. <a href="#" data-act="eddrop">Discard draft and load the live version</a></div>`:""}</div>
+   <div class="tabs">${[["text","Text & fonts"],["colours","Colours"],["brand","Branding"],["wallet","360° Wallet"]].map(t=>`<button class="b o s" data-act="etab" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>
+   <div class="panel" id="ed"></div></div>
+   <div class="pvw" id="pvw"><div class="bar" style="padding:8px;margin:0;align-items:center">
+     ${["desktop","tablet","mobile"].map(d=>`<button class="b o s" data-act="dev" data-d="${d}">${d[0].toUpperCase()+d.slice(1)}</button>`).join("")}
+     <label class="mut" style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="selmode" data-chg="selmode" checked> Click an element in the preview to edit it</label>
+     <a class="b o s" href="../index.html" target="_blank" style="text-decoration:none">Open live site</a></div>
+     <iframe id="pv" src="../index.html?preview=1"></iframe></div></div>`;
+  $("#pv").onload=()=>{pv();pvMode();pvHi();pvScroll2()};
+  edDraw();histBtns();edStat();devSet();
+}
+function devSet(){const f=$("#pv");if(!f)return;f.style.transition="none";f.style.width=DEVW[S.dev];f.style.borderInline=S.dev==="desktop"?"0":"1px solid var(--line)";$$("[data-act=dev]").forEach(b=>b.classList.toggle("on",b.dataset.d===S.dev))}
+ACT.dev=a=>{S.dev=a.dataset.d;devSet()};
+const pvPost=m=>{const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage(m,"*")};
+const pvMode=()=>{const c=$("#selmode");pvPost({raasMode:{select:c?c.checked:true}})};
+CHG.selmode=()=>pvMode();
+const pvHi=()=>{if(S.etab==="text"){pvPost({raasHi:S.sel});pvPost({raasStyle:S.sel})}else pvPost({raasHi:null})};
+const pvScroll2=()=>{if(S.etab==="wallet"||S.etab==="brand")pvPost({raasScroll:""})};
+ACT.etab=a=>{clearTimeout(ct);commit();S.etab=a.dataset.tab;edDraw();pvHi();pvScroll2()};
+ACT.eddrop=async(a,e)=>{e.preventDefault();if(!confirm("Delete the saved draft and load the live version?"))return;const r=await sb.from("site_config").delete().eq("id","draft");if(r.error)throw r.error;await edLoad();edShell();toast("Draft discarded")};
+
+/* ---- field builders (all use data-ek = config path(s), "|" separates several paths set together) ---- */
+const eK=k=>`data-ek="${k}"`;
+const eTxt=(l,k,kind)=>{const v=getP(S.draft,k);
+  if(kind==="list")return `<label class="f"><span>${esc(l)} (one per line)</span><textarea rows="3" ${eK(k)} data-et="list">${esc((v||[]).join("\n"))}</textarea></label>`;
+  if(kind==="textarea")return `<label class="f"><span>${esc(l)}</span><textarea rows="3" ${eK(k)} data-et="str">${esc(v)}</textarea></label>`;
+  return `<label class="f"><span>${esc(l)}</span><input ${eK(k)} data-et="str" value="${esc(v)}"></label>`};
+const eNum=(l,k,ph,step)=>`<label class="f"><span>${esc(l)}</span><input type="number" min="0" step="${step||1}" ${eK(k)} data-et="num" value="${esc(getP(S.draft,k)??"")}" placeholder="${esc(ph||"")}"></label>`;
+const eSel=(l,k,opts)=>{const v=String(getP(S.draft,k)??"");return `<label class="f"><span>${esc(l)}</span><select ${eK(k)} data-et="str">${opts.map(o=>`<option value="${esc(o[0])}" ${String(o[0])===v?"selected":""}>${esc(o[1])}</option>`).join("")}</select></label>`};
+const eTog=(l,k)=>`<label class="tg"><input type="checkbox" ${eK(k)} data-et="toggle" ${getP(S.draft,k)?"checked":""}> ${esc(l)}</label>`;
+const eRng=(l,k,min,max,step)=>{const v=getP(S.draft,k);return `<label class="f"><span>${esc(l)}</span><div class="cp"><input type="range" min="${min}" max="${max}" step="${step}" ${eK(k)} data-et="num" value="${v}"><output style="min-width:44px">${v}</output></div></label>`};
+const eCol=(l,k,def,clr)=>{const keys=k.split("|"),v=getP(S.draft,keys[0])||"";
+  return `<div class="f"><span>${esc(l)}${clr?` <a href="#" data-act="eclr" data-k="${k}" data-def="${def}">${v?"reset":"(default)"}</a>`:""}</span><div class="cp"><input type="color" ${eK(k)} data-et="color" value="${esc(v||def)}"><input ${eK(k)} data-et="color" value="${esc(v)}" maxlength="7" placeholder="${def}"></div></div>`};
+const eMed=(l,k,kind,folder)=>{const v=getP(S.draft,k)||"";
+  return `<div class="f"><span>${esc(l)}</span><input ${eK(k)} data-et="str" value="${esc(v)}" placeholder="https://… or upload"><div class="mrow"><label class="b o s">${v?"Replace":"Upload"}<input type="file" hidden accept="${kind==="video"?"video/mp4,video/webm":"image/*"}" data-chg="emup" data-k="${k}" data-kind="${kind}" data-folder="${folder}"></label><button class="b d s" data-act="emdel" data-k="${k}">Delete</button></div>${v?(kind==="video"?`<video src="${esc(v)}" muted controls playsinline style="height:90px;background:#000"></video>`:`<img src="${esc(v)}" style="height:56px;background:#eee;border:1px solid var(--line)">`):""}</div>`};
+
+function edDraw(){
+  $$("[data-act=etab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===S.etab));
+  const h={text:tabText,colours:tabColours,brand:tabBrand,wallet:tabWallet}[S.etab]||tabText;
+  $("#ed").innerHTML=h();
+  const v=$("#wprev");if(v){const w=S.draft.ext.wallet;v.loop=w.loop!==false;v.playbackRate=+w.speed||1;v.addEventListener("loadedmetadata",()=>{v.playbackRate=+S.draft.ext.wallet.speed||1})}
+}
+/* ---- tab: text & fonts ---- */
+function tabText(){
+  const els=RAAS_ELEMENTS,el=els.find(e=>e.id===S.sel)||els[0],id=el.id,P="ext.styles."+id+".",inf=(S.info&&S.info[id])||{};
+  const groups=[...new Set(els.map(e=>e.g))];
+  const FAM=[["","(site default)"],...FONTL.map(f=>[f,f])];
+  return `<h3>Edit any element</h3>
+  <label class="f"><span>Element (or click it in the preview)</span><select data-chg="elsel">${groups.map(g=>`<optgroup label="${g}">${els.filter(e=>e.g===g).map(e=>`<option value="${e.id}" ${e.id===id?"selected":""}>${e.l}</option>`).join("")}</optgroup>`).join("")}</select></label>
+  ${el.text?eTxt("Text",el.text,el.kind):`<p class="mut" style="margin-bottom:10px">${esc(el.note||"")}</p>`}
+  <h3 style="margin:14px 0 8px">Style</h3>
+  <div class="r3">${eNum("Size – desktop (px)",P+"size",inf.size?Math.round(inf.size):"")}${eNum("Tablet (px)",P+"sizeT")}${eNum("Mobile (px)",P+"sizeM")}</div>
+  <div class="r2">${eSel("Font",P+"family",FAM)}${eSel("Weight",P+"weight",[["","(default)"],["400","Regular"],["500","Medium"],["600","Semi-bold"],["700","Bold"]])}</div>
+  ${eCol("Text colour",P+"color",toHex(inf.color)||"#000000",true)}
+  <div class="r3">${eSel("Alignment",P+"align",[["","(default)"],["left","Left"],["center","Centre"],["right","Right"],["justify","Justify"]])}${eNum("Line height",P+"lh","e.g. 1.4",.05)}${eNum("Letter spacing (px)",P+"ls","e.g. 1",.1)}</div>
+  <div class="acts" style="justify-content:flex-start;margin-top:4px"><button class="b o s" data-act="elreset">Reset this element</button><button class="b o s" data-act="elresetall">Reset all element styles</button></div>
+  <details style="margin-top:18px"><summary style="cursor:pointer;font-weight:600">More content: contact, delivery and policies</summary><div style="margin-top:10px">
+   ${eTxt("Email","contact.email")}${eTxt("Phone","contact.phone")}${eTxt("WhatsApp number","contact.whatsapp")}${eTxt("Store address","contact.address")}
+   ${eTxt("Instagram URL","contact.instagram")}${eTxt("Facebook URL","contact.facebook")}${eTxt("TikTok URL","contact.tiktok")}${eTxt("YouTube URL","contact.youtube")}
+   ${eTxt("Delivery information","delivery.info","textarea")}${eTxt("Privacy Policy","policies.privacy","textarea")}${eTxt("Return and Exchange Policy","policies.returns","textarea")}
+   <p class="mut">Menu, button and label wording not listed here: <a href="#site" data-go="site">Website → All website texts</a>.</p></div></details>`;
+}
+function toHex(c){const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c||"");return m?"#"+[m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,"0")).join(""):""}
+CHG.elsel=t=>{S.sel=t.value;edDraw();pvHi()};
+ACT.elreset=()=>{const el=RAAS_ELEMENTS.find(e=>e.id===S.sel);delete S.draft.ext.styles[S.sel];if(el&&el.text)setPE(S.draft,el.text,cl(getP(RAAS_DEFAULTS,el.text)));edDraw();touch();commit()};
+ACT.elresetall=()=>{if(!confirm("Remove the custom font / size / colour of EVERY element?"))return;S.draft.ext.styles={};edDraw();touch();commit()};
+/* ---- tab: colours ---- */
+const CF=[["Main background","theme.bg|secColors.shopBg|secColors.pdpBg","#ffffff"],["Secondary background","ext.colors.soft|secColors.saleBg|secColors.aboutBg","#f4f4f4"],
+ ["Header background","theme.header","#ffffff"],["Footer background","theme.footer","#000000"],
+ ["Primary text","theme.text|secColors.headText|secColors.shopText|secColors.aboutText|secColors.saleText|secColors.tickText","#0a0a0a"],["Secondary text","ext.colors.muted","#6b6b6b"],
+ ["Heading colour","ext.colors.heading","#0a0a0a"],["Button background","theme.btn","#000000"],["Button text","theme.btnText","#ffffff"],
+ ["Navigation colour","ext.colors.nav","#0a0a0a"],["Product card background","ext.colors.cardBg","#ffffff"],["Border colour","ext.colors.border","#e6e6e6"],
+ ["Announcement bar background","secColors.annBg","#000000"],["Announcement bar text","secColors.annText","#ffffff"],
+ ["Navigation hover colour","ext.colors.navHover","#6b6b6b"],["Footer / contact link hover","ext.colors.linkHover","#ffffff"],["Button hover background","ext.colors.btnHoverBg","#ffffff"],["Button hover text","ext.colors.btnHoverText","#000000"]];
+function tabColours(){return `<h3>Website colours</h3><p class="mut" style="margin-bottom:10px">Pick a colour or type a HEX code. The preview changes instantly. The original RAAS black-and-white design is the default; “reset” returns one colour to it.</p>
+  ${CF.map(c=>eCol(c[0],c[1],c[2],true)).join("")}<div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="colreset">Reset all colours to the RAAS default</button></div>`}
+const colDefault=(k,def)=>k.startsWith("ext.")?"":getP(RAAS_DEFAULTS,k);
+ACT.eclr=(a,e)=>{e.preventDefault();a.dataset.k.split("|").forEach(k=>setPE(S.draft,k,k.startsWith("ext.styles")?"":colDefault(k)));edDraw();touch();commit()};
+ACT.colreset=()=>{CF.forEach(c=>c[1].split("|").forEach(k=>setPE(S.draft,k,colDefault(k))));edDraw();touch();commit()};
+/* ---- tab: branding ---- */
+function tabBrand(){return `<h3>Name, logo and branding</h3><p class="mut" style="margin-bottom:10px">Changes apply everywhere the brand appears: header, footer, product page, browser tab, loader, copyright line.</p>
+  ${eTxt("Website / brand name","brand.name")}${eTog("Use the brand name in the curtain, copyright line and “About” heading (when those still have the original wording)","ext.brand.syncName")}
+  ${eMed("Header logo (also shown on the product page)","brand.logoUrl","image","branding")}${eRng("Header logo height (px)","brand.logoHeight",16,80,1)}
+  ${eMed("Footer logo (empty = header logo)","brand.footerLogoUrl","image","branding")}${eRng("Footer logo height (px)","brand.footerLogoHeight",16,80,1)}
+  ${eMed("Favicon (browser tab icon, PNG/ICO/SVG)","ext.brand.favicon","image","branding")}
+  ${eTxt("Website tagline","ext.brand.tagline")}${eTxt("Brand description (search engines; footer if the footer text is empty)","ext.brand.description","textarea")}
+  <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="brandreset">Reset branding to default</button></div>`}
+ACT.brandreset=()=>{S.draft.brand=cl(RAAS_DEFAULTS.brand);S.draft.ext.brand=cl(RAAS_EXT_DEFAULTS.brand);edDraw();touch();commit()};
+/* ---- tab: 360 wallet ---- */
+function tabWallet(){
+  const h=S.draft.hero,w=S.draft.ext.wallet,lv=S.live.hero.video,st=!h.video?"No wallet video uploaded":(h.video===lv&&sameJ(S.live.ext.wallet,w)?"Live on the website":"Not published yet – press Publish");
+  return `<h3>360° Wallet Display / Hero Wallet Media</h3>
+  <p class="mut" style="margin-bottom:10px">Upload the rotating video of your actual wallet. After <b>Publish</b> it replaces the picture in the homepage hero and loops continuously.</p>
+  ${eTog("Show the 360° wallet animation on the homepage","ext.wallet.enabled")}
+  <div class="f"><span>Wallet video (MP4 or WebM, max 50 MB) – <b>${st}</b></span>
+   ${h.video?`<video id="wprev" src="${esc(h.video)}" muted controls playsinline autoplay style="width:100%;max-height:230px;background:#000;border-radius:4px"></video><div class="mut" style="font-size:12px;word-break:break-all">${esc(h.video)}</div>`:`<div class="mut" style="padding:20px;border:1px dashed #aaa;text-align:center">No video yet. The current image / built-in wallet is shown.</div>`}
+   <div class="mrow"><label class="b s" id="wvbtn">${h.video?"Replace video":"Upload 360° video"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.video"></label>
+   ${h.video?`<button class="b d s" data-act="emdel" data-k="hero.video">Delete video</button>`:""}</div></div>
+  <h3 style="margin:14px 0 8px">Playback</h3>
+  ${eTog("Autoplay","ext.wallet.autoplay")}${eTog("Loop continuously","ext.wallet.loop")}${eRng("Playback speed (1 = normal)","ext.wallet.speed",.25,2,.05)}
+  <h3 style="margin:14px 0 8px">Fallback &amp; phones</h3>
+  ${eMed("Fallback wallet image (shown if the animation is off or the video cannot load)","hero.image","image","hero-wallet")}
+  <div class="f"><span>Lighter video for phones (optional)</span>${h.videoMobile?`<video src="${esc(h.videoMobile)}" muted controls playsinline style="height:80px;background:#000"></video>`:""}<div class="mrow"><label class="b o s">${h.videoMobile?"Replace":"Upload"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.videoMobile"></label>${h.videoMobile?`<button class="b d s" data-act="emdel" data-k="hero.videoMobile">Delete</button>`:""}</div></div>
+  <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="wreset">Reset playback settings</button></div>
+  <p class="mut" style="font-size:12px;margin-top:8px">The preview on the right shows the uploaded video straight away, before it goes live. Use “Save draft” to keep it for later or “Publish” to put it on the live website.</p>`}
+ACT.wreset=()=>{S.draft.ext.wallet=cl(RAAS_EXT_DEFAULTS.wallet);syncType();edDraw();touch();commit()};
+function syncType(){const h=S.draft.hero,w=S.draft.ext.wallet;h.mediaType=(w.enabled!==false&&(h.video||h.videoMobile))?"video":(h.image?"image":"3d")}
+function probeVideo(file){return new Promise((res,rej)=>{const v=document.createElement("video"),u=URL.createObjectURL(file),msg="This video cannot be read by the browser. Please export it as H.264 MP4 or WebM.";
+  const tm=setTimeout(()=>done(rej,new Error(msg)),12000),done=(f,x)=>{clearTimeout(tm);URL.revokeObjectURL(u);f(x)};
+  v.preload="metadata";v.muted=true;v.onloadedmetadata=()=>done(res,{w:v.videoWidth,h:v.videoHeight,d:v.duration});v.onerror=()=>done(rej,new Error(msg));v.src=u})}
+const trashOld=u=>{if(u&&String(u).includes("/storage/v1/object/public/media/"))S.trash.add(u)};
+CHG.wvup=async t=>{
+  const f=t.files[0];t.value="";if(!f)return;
+  if(!/\.(mp4|webm)$/i.test(f.name)||(f.type&&!/^video\/(mp4|webm)$/.test(f.type)))throw new Error("Only MP4 or WebM videos are allowed.");
+  if(f.size>MAXVID)throw new Error("This video is "+(f.size/1048576).toFixed(1)+" MB. The limit is 50 MB. Please compress it.");
+  if(f.size<1000)throw new Error("This file looks empty or damaged.");
+  const k=t.dataset.k,btn=$("#wvbtn");toast("Checking video…");const m=await probeVideo(f);
+  toast("Uploading "+(f.size/1048576).toFixed(1)+" MB… please wait");if(btn)btn.style.opacity=.5;
+  try{const url=await up(f,"hero-wallet");trashOld(getP(S.draft,k));setPE(S.draft,k,url);
+    if(k==="hero.video")S.draft.ext.wallet.enabled=true;syncType();
+    edDraw();touch();commit();toast(`Video ready (${m.w}×${m.h}${isFinite(m.d)?", "+m.d.toFixed(1)+"s":""}). Check the preview, then press Publish.`)}
+  finally{if(btn)btn.style.opacity=1}
+};
+CHG.emup=async t=>{
+  const f=t.files[0];t.value="";if(!f)return;
+  if(t.dataset.kind==="image"){if(!/^image\//.test(f.type)&&!/\.(ico|svg)$/i.test(f.name))throw new Error("Please choose an image file.");if(f.size>MAXIMG)throw new Error("Image is larger than 8 MB.")}
+  toast("Uploading…");const url=await up(f,t.dataset.folder||"branding"),k=t.dataset.k;trashOld(getP(S.draft,k));setPE(S.draft,k,url);
+  if(k==="hero.image")syncType();edDraw();touch();commit();toast("Uploaded")};
+ACT.emdel=a=>{const k=a.dataset.k;if(!confirm("Delete this file? It is removed from the website when you press Publish."))return;trashOld(getP(S.draft,k));setPE(S.draft,k,"");if(k.startsWith("hero."))syncType();edDraw();touch();commit()};
+
+/* ---- one input handler for every editor field ---- */
+function ecoerce(t){switch(t.dataset.et){case"toggle":return t.checked;case"num":return t.value===""?"":+t.value;case"list":return t.value.split("\n").map(x=>x.trim()).filter(Boolean);default:return t.value}}
+document.addEventListener("input",e=>{
+  const t=e.target,ed=t.closest&&t.closest("#ed");if(!ed||!t.dataset.ek)return;
+  let v=ecoerce(t);const keys=t.dataset.ek.split("|");
+  if(t.dataset.et==="color"){if(v!==""&&!/^#[0-9a-f]{6}$/i.test(v))return;$$(`[data-ek="${t.dataset.ek}"]`,ed).forEach(x=>{if(x!==t)x.value=v||(x.type==="color"?x.value:"")})}
+  if(t.type==="range"){const o=t.parentElement.querySelector("output");if(o)o.textContent=v}
+  keys.forEach(k=>setPE(S.draft,k,v));
+  if(t.dataset.ek==="ext.wallet.enabled")syncType();
+  const pr=$("#wprev");if(pr){if(t.dataset.ek==="ext.wallet.speed")pr.playbackRate=+v||1;if(t.dataset.ek==="ext.wallet.loop")pr.loop=!!v}
+  touch();
+});
+addEventListener("message",e=>{
+  const f=$("#pv"),d=e.data;if(!f||!d||e.source!==f.contentWindow)return;
+  if(d.raasSelect){S.sel=d.raasSelect;S.etab="text";edDraw();pvHi()}
+  if(d.raasStyleInfo){const i=d.raasStyleInfo;S.info=S.info||{};S.info[i.id]=i;
+    if(S.etab==="text"&&S.sel===i.id){const ed=$("#ed"),P="ext.styles."+i.id+".",q=s=>ed.querySelector(`[data-ek="${P}${s}"]`);
+      const sz=q("size");if(sz&&!sz.value)sz.placeholder=Math.round(i.size);
+      const lh=q("lh");if(lh&&!lh.value)lh.placeholder=i.lh==="normal"?"normal":(parseFloat(i.lh)/i.size).toFixed(2);
+      const co=ed.querySelector(`input[type=color][data-ek="${P}color"]`);if(co&&!getP(S.draft,P+"color")&&toHex(i.color))co.value=toHex(i.color)}}
+});
+/* ---- save draft / publish / reset ---- */
+function checkDraft(){const h=S.draft.hero;if(h.video&&!/^https?:\/\//i.test(h.video))throw new Error("The wallet video link is not valid.");
+  const sp=+S.draft.ext.wallet.speed;if(!(sp>=.1&&sp<=4))throw new Error("Playback speed must be between 0.1 and 4.");}
+ACT.edsave=async a=>{clearTimeout(ct);commit();a.disabled=true;try{checkDraft();const r=await sb.from("site_config").upsert({id:"draft",data:S.draft,updated_at:new Date().toISOString()});if(r.error)throw r.error;S.hasDraft=true;toast("Draft saved. It is NOT live yet.")}finally{a.disabled=false}};
+async function cleanTrash(){
+  const now=JSON.stringify(S.draft),paths=[];
+  S.trash.forEach(u=>{if(now.includes(u))return;const m=String(u).split("/storage/v1/object/public/media/")[1];if(m&&/^(hero-wallet|branding)\//.test(m))paths.push(decodeURIComponent(m.split("?")[0]))});
+  if(paths.length){try{await sb.storage.from("media").remove(paths)}catch(e){console.warn("cleanup",e)}}
+}
+ACT.edpub=async a=>{clearTimeout(ct);commit();a.disabled=true;
+  try{checkDraft();const r=await sb.from("site_config").upsert({id:"main",data:S.draft,updated_at:new Date().toISOString()});if(r.error)throw r.error;
+    await sb.from("site_config").delete().eq("id","draft");await cleanTrash();
+    S.live=cl(S.draft);S.hasDraft=false;S.trash=new Set();histReset();histBtns();edDraw();edStat();toast("Published. The live website is updated for every visitor.")}
+  finally{a.disabled=false}};
+ACT.edresetall=()=>{if(!confirm("Reset EVERYTHING in the editor (texts, fonts, colours, branding, wallet video) to the original RAAS defaults?\n\nNothing changes on the live site until you press Publish. You can still Undo."))return;
+  [S.draft.hero.video,S.draft.hero.videoMobile,S.draft.hero.image,S.draft.brand.logoUrl,S.draft.brand.footerLogoUrl,S.draft.ext.brand.favicon].forEach(trashOld);
+  S.draft=normDraft(RAAS_merge(RAAS_DEFAULTS,{}));edDraw();touch();commit()};
+
+/* ---- product discounts: live calculator ---- */
+function finalPrice(price,type,val){if(price==null||val==null||val==="")return price;return type==="percent"?Math.round(price*(1-val/100)):Math.max(0,Math.round(price-val))}
+function discCell(p){
+  if(p.price==null)return '<span class="mut">not set</span>';if(p.discount_value==null)return money(p.price);
+  const n=Date.now(),s=p.discount_start&&Date.parse(p.discount_start)>n?"scheduled":p.discount_end&&Date.parse(p.discount_end)<=n?"expired":"active";
+  return `<s class="mut">${money(p.price)}</s> <b>${money(finalPrice(p.price,p.discount_type,p.discount_value))}</b><br><span class="tag">${p.discount_type==="percent"?p.discount_value+"% off":"PKR "+p.discount_value+" off"}</span> <span class="tag ${s==="active"?"delivered":s==="scheduled"?"pending":"cancelled"}">${s}</span>`}
+function calcDisc(){
+  const el=$("#pcalc");if(!el)return;const price=$("#pprice").value===""?null:+$("#pprice").value,en=$("#pden").checked,t=$("#pdt").value,v=$("#pdv").value===""?null:+$("#pdv").value;
+  $("#pdbox").style.opacity=en?1:.5;
+  if(!en||price==null||v==null){el.innerHTML=price==null?"Enter the original price to see the final price.":en?"Enter the discount value.":"Discount is off. Customers pay the original price.";return}
+  const f=finalPrice(price,t,v);el.innerHTML=`Original <s>${money(price)}</s> → discount ${t==="percent"?v+"%":money(v)} → <b>Final price ${money(f)}</b> <span class="mut">(customers save ${money(price-f)})</span>`}
+$("#mbox").addEventListener("input",e=>{if(["pprice","pden","pdt","pdv","pds","pde"].includes(e.target.id))calcDisc()});
+ACT.rmdisc=()=>{$("#pden").checked=false;$("#pdv").value="";$("#pds").value="";$("#pde").value="";calcDisc();toast("Discount cleared. Press Save product to apply.")};
+ACT.rmdiscrow=async a=>{if(!confirm("Remove the discount from this product?"))return;const r=await sb.from("products").update({discount_type:null,discount_value:null,discount_start:null,discount_end:null}).eq("id",a.dataset.id);if(r.error)throw r.error;toast("Discount removed");V.products()};
 
 addEventListener("hashchange",()=>{if(ME&&location.hash.slice(1)!==S.cur)go(location.hash.slice(1))});
 start();
