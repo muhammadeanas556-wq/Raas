@@ -570,15 +570,14 @@ CHG.elsel=t=>{S.sel=t.value;edDraw();pvHi()};
 ACT.elreset=()=>{const el=RAAS_ELEMENTS.find(e=>e.id===S.sel);delete S.draft.ext.styles[S.sel];if(el&&el.text)setPE(S.draft,el.text,cl(getP(RAAS_DEFAULTS,el.text)));edDraw();touch();commit()};
 ACT.elresetall=()=>{if(!confirm("Remove the custom font / size / colour of EVERY element?"))return;S.draft.ext.styles={};edDraw();touch();commit()};
 /* ---- tab: colours ---- */
-const CF=[["Main background","theme.bg|secColors.shopBg|secColors.pdpBg","#ffffff"],["Secondary background","ext.colors.soft|secColors.saleBg|secColors.aboutBg","#f4f4f4"],
- ["Header background","theme.header","#ffffff"],["Footer background","theme.footer","#000000"],
- ["Primary text","theme.text|secColors.headText|secColors.shopText|secColors.aboutText|secColors.saleText|secColors.tickText","#0a0a0a"],["Secondary text","ext.colors.muted","#6b6b6b"],
- ["Heading colour","ext.colors.heading","#0a0a0a"],["Button background","theme.btn","#000000"],["Button text","theme.btnText","#ffffff"],
- ["Navigation colour","ext.colors.nav","#0a0a0a"],["Product card background","ext.colors.cardBg","#ffffff"],["Border colour","ext.colors.border","#e6e6e6"],
- ["Announcement bar background","secColors.annBg","#000000"],["Announcement bar text","secColors.annText","#ffffff"],
- ["Navigation hover colour","ext.colors.navHover","#6b6b6b"],["Footer / contact link hover","ext.colors.linkHover","#ffffff"],["Button hover background","ext.colors.btnHoverBg","#ffffff"],["Button hover text","ext.colors.btnHoverText","#000000"]];
-function tabColours(){return `<h3>Website colours</h3><p class="mut" style="margin-bottom:10px">Pick a colour or type a HEX code. The preview changes instantly. The original RAAS black-and-white design is the default; “reset” returns one colour to it.</p>
-  ${CF.map(c=>eCol(c[0],c[1],c[2],true)).join("")}<div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="colreset">Reset all colours to the RAAS default</button></div>`}
+const CF=[["Primary background","look.bg","#0b0b0a","Header, hero, products, product page and footer"],
+ ["Secondary / section background","look.section","#141412","Announcement bar, about, sale strip and cart"],
+ ["Main text","look.text","#f6f4ef","Headings and text. Softer greys and lines are made from it automatically"],
+ ["Accent / button","look.accent","#f7d98b","Buttons, highlights, badges. Button text turns dark or light automatically"]];
+function tabColours(){return `<h3>Website colours</h3><p class="mut" style="margin-bottom:12px">Just 4 colours control the whole website. Pick a colour or type a HEX code; the preview changes instantly. Press <b>Publish</b> to make it live.</p>
+  <div class="swatch" style="display:flex;height:34px;border-radius:8px;overflow:hidden;margin-bottom:14px;border:1px solid var(--line)">${CF.map(c=>`<i style="flex:1;background:${esc(getP(S.draft,c[1])||c[2])}"></i>`).join("")}</div>
+  ${CF.map(c=>eCol(c[0],c[1],c[2],true)+`<p class="mut" style="font-size:12px;margin:-4px 0 12px">${c[3]}</p>`).join("")}
+  <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="colreset">Reset to the reference colours</button></div>`}
 const colDefault=(k,def)=>k.startsWith("ext.")?"":getP(RAAS_DEFAULTS,k);
 ACT.eclr=(a,e)=>{e.preventDefault();a.dataset.k.split("|").forEach(k=>setPE(S.draft,k,k.startsWith("ext.styles")?"":colDefault(k)));edDraw();touch();commit()};
 ACT.colreset=()=>{CF.forEach(c=>c[1].split("|").forEach(k=>setPE(S.draft,k,colDefault(k))));edDraw();touch();commit()};
@@ -598,9 +597,17 @@ function tabWallet(){
   <p class="mut" style="margin-bottom:10px">Upload the rotating video of your actual wallet. After <b>Publish</b> it replaces the picture in the homepage hero and loops continuously.</p>
   ${eTog("Show the 360° wallet animation on the homepage","ext.wallet.enabled")}
   <div class="f"><span>Wallet video (MP4 or WebM, max 50 MB) – <b>${st}</b></span>
-   ${h.video?`<video id="wprev" src="${esc(h.video)}" muted controls playsinline autoplay style="width:100%;max-height:230px;background:#000;border-radius:4px"></video><div class="mut" style="font-size:12px;word-break:break-all">${esc(h.video)}</div>`:`<div class="mut" style="padding:20px;border:1px dashed #aaa;text-align:center">No video yet. The current image / built-in wallet is shown.</div>`}
+   ${h.video?`<video id="wprev" src="${esc(h.video)}" muted controls playsinline autoplay loop style="width:100%;max-height:230px;border-radius:6px;background:repeating-conic-gradient(#d9d9d9 0 25%,#fff 0 50%) 0 0/18px 18px"></video>
+   <div id="wstat" class="wstat">${wStatHTML(h.video)}</div><div class="mut" style="font-size:12px;word-break:break-all">${esc(h.video)}</div>`:`<div class="mut" style="padding:20px;border:1px dashed #aaa;text-align:center">No video yet. The current image / built-in wallet is shown.</div>`}
    <div class="mrow"><label class="b s" id="wvbtn">${h.video?"Replace video":"Upload 360° video"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.video"></label>
    ${h.video?`<button class="b d s" data-act="emdel" data-k="hero.video">Delete video</button>`:""}</div></div>
+  <h3 style="margin:14px 0 8px">Transparent background</h3>
+  ${eSel("Background removal","ext.wallet.bgMode",[["auto","Automatic (recommended)"],["key","Always remove the solid background colour"],["none","Off – show the video exactly as uploaded"]])}
+  ${eRng("Removal strength (raise it if a thin edge of background remains, lower it if parts of the wallet disappear)","ext.wallet.tolerance",4,60,1)}
+  <div class="f"><span>Transparent copy for iPhone / Safari (optional, HEVC with alpha .mov / .mp4)</span>
+   <div class="mrow"><label class="b o s">${w.hevc?"Replace":"Upload"}<input type="file" hidden accept="video/quicktime,video/mp4,.mov,.mp4" data-chg="wvup" data-k="ext.wallet.hevc"></label>${w.hevc?`<button class="b d s" data-act="emdel" data-k="ext.wallet.hevc">Delete</button>`:""}</div>
+   ${w.hevc?`<div class="mut" style="font-size:12px;word-break:break-all">${esc(w.hevc)}</div>`:""}
+   <p class="mut" style="font-size:12px;margin-top:6px">Safari and iPhones cannot show transparency in WebM files. Without this copy the website removes the background automatically on those devices instead.</p></div>
   <h3 style="margin:14px 0 8px">Playback</h3>
   ${eTog("Autoplay","ext.wallet.autoplay")}${eTog("Loop continuously","ext.wallet.loop")}${eRng("Playback speed (1 = normal)","ext.wallet.speed",.25,2,.05)}
   <h3 style="margin:14px 0 8px">Fallback &amp; phones</h3>
@@ -608,6 +615,19 @@ function tabWallet(){
   <div class="f"><span>Lighter video for phones (optional)</span>${h.videoMobile?`<video src="${esc(h.videoMobile)}" muted controls playsinline style="height:80px;background:#000"></video>`:""}<div class="mrow"><label class="b o s">${h.videoMobile?"Replace":"Upload"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.videoMobile"></label>${h.videoMobile?`<button class="b d s" data-act="emdel" data-k="hero.videoMobile">Delete</button>`:""}</div></div>
   <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="wreset">Reset playback settings</button></div>
   <p class="mut" style="font-size:12px;margin-top:8px">The preview on the right shows the uploaded video straight away, before it goes live. Use “Save draft” to keep it for later or “Publish” to put it on the live website.</p>`}
+/* checks whether the wallet video really has a transparent background */
+S.wInfo=S.wInfo||{};
+function wStatHTML(u){const r=S.wInfo[u];
+  if(!r){if(u&&window.RAAS_analyzeVideo){S.wInfo[u]={kind:"checking"};RAAS_analyzeVideo(u).then(x=>{S.wInfo[u]=x;const e=$("#wstat");if(e&&S.draft.hero.video===u)e.innerHTML=wStatHTML(u)})}return wMsg({kind:"checking"})}
+  return wMsg(r)}
+function wMsg(r){const M={
+  checking:["#6b7280","Checking the video background…"],
+  alpha:["#047857","✓ Real transparent video (alpha channel). Only the wallet is shown on the website. For iPhone / Safari also upload the HEVC copy below, or the background is removed automatically there."],
+  solid:["#b45309",`This file has no transparency – it has a solid ${r.hex?`<span style="display:inline-block;width:11px;height:11px;border:1px solid #999;vertical-align:-1px;background:${r.hex}"></span> ${r.hex}`:""} background (normal for MP4). The website removes this background automatically and shows only the wallet. For the cleanest edges export a WebM with alpha.`],
+  scene:["#b91c1c","This video has no transparency and its background is not one plain colour, so it cannot be removed cleanly. Please export the wallet with a transparent background (WebM VP9 with alpha) or on one plain colour."],
+  blocked:["#b45309","The video could not be inspected here (storage blocked pixel access). It will still play."],
+  error:["#b91c1c","This video could not be read by the browser."],unknown:["#6b7280","Could not check the video in time."]}[r.kind]||["#6b7280",""];
+  return `<p style="font-size:12.5px;margin:6px 0;color:${M[0]}">${M[1]}</p>`}
 ACT.wreset=()=>{S.draft.ext.wallet=cl(RAAS_EXT_DEFAULTS.wallet);syncType();edDraw();touch();commit()};
 function syncType(){const h=S.draft.hero,w=S.draft.ext.wallet;h.mediaType=(w.enabled!==false&&(h.video||h.videoMobile))?"video":(h.image?"image":"3d")}
 function probeVideo(file){return new Promise((res,rej)=>{const v=document.createElement("video"),u=URL.createObjectURL(file),msg="This video cannot be read by the browser. Please export it as H.264 MP4 or WebM.";
@@ -616,12 +636,15 @@ function probeVideo(file){return new Promise((res,rej)=>{const v=document.create
 const trashOld=u=>{if(u&&String(u).includes("/storage/v1/object/public/media/"))S.trash.add(u)};
 CHG.wvup=async t=>{
   const f=t.files[0];t.value="";if(!f)return;
-  if(!/\.(mp4|webm)$/i.test(f.name)||(f.type&&!/^video\/(mp4|webm)$/.test(f.type)))throw new Error("Only MP4 or WebM videos are allowed.");
+  const isH=t.dataset.k==="ext.wallet.hevc";
+  if(isH){if(!/\.(mov|mp4)$/i.test(f.name))throw new Error("The iPhone / Safari copy must be a .mov or .mp4 (HEVC with alpha).")}
+  else if(!/\.(mp4|webm)$/i.test(f.name)||(f.type&&!/^video\/(mp4|webm)$/.test(f.type)))throw new Error("Only MP4 or WebM videos are allowed.");
   if(f.size>MAXVID)throw new Error("This video is "+(f.size/1048576).toFixed(1)+" MB. The limit is 50 MB. Please compress it.");
   if(f.size<1000)throw new Error("This file looks empty or damaged.");
-  const k=t.dataset.k,btn=$("#wvbtn");toast("Checking video…");const m=await probeVideo(f);
+  const k=t.dataset.k,btn=$("#wvbtn");toast("Checking video…");const m=isH?await probeVideo(f).catch(()=>({w:"?",h:"?",d:NaN})):await probeVideo(f);
+  let info=null;if(!isH&&window.RAAS_analyzeVideo){const u=URL.createObjectURL(f);info=await RAAS_analyzeVideo(u);URL.revokeObjectURL(u)}
   toast("Uploading "+(f.size/1048576).toFixed(1)+" MB… please wait");if(btn)btn.style.opacity=.5;
-  try{const url=await up(f,"hero-wallet");trashOld(getP(S.draft,k));setPE(S.draft,k,url);
+  try{const url=await up(f,"hero-wallet");trashOld(getP(S.draft,k));setPE(S.draft,k,url);if(info)S.wInfo[url]=info;
     if(k==="hero.video")S.draft.ext.wallet.enabled=true;syncType();
     edDraw();touch();commit();toast(`Video ready (${m.w}×${m.h}${isFinite(m.d)?", "+m.d.toFixed(1)+"s":""}). Check the preview, then press Publish.`)}
   finally{if(btn)btn.style.opacity=1}
@@ -642,6 +665,7 @@ document.addEventListener("input",e=>{
   if(t.type==="range"){const o=t.parentElement.querySelector("output");if(o)o.textContent=v}
   keys.forEach(k=>setPE(S.draft,k,v));
   if(t.dataset.ek==="ext.wallet.enabled")syncType();
+  if(t.dataset.ek.startsWith("look.")){const sw=ed.querySelector(".swatch");if(sw)[...sw.children].forEach((x,i)=>x.style.background=getP(S.draft,CF[i][1])||CF[i][2])}
   const pr=$("#wprev");if(pr){if(t.dataset.ek==="ext.wallet.speed")pr.playbackRate=+v||1;if(t.dataset.ek==="ext.wallet.loop")pr.loop=!!v}
   touch();
 });

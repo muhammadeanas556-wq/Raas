@@ -44,7 +44,10 @@ const EL=[
 const PICK_ORDER=["heroBtn","navHome","navWallets","navAbout","navContact","search","cart","logo","heroTitle","heroDesc","saleTitle","bannerTitle","bannerText","collTitle","cardName","cardCat","cardPrice","pdpTitle","pdpPrice","pdpDesc","aboutTitle","aboutText","contactInfo","footAbout","footHead","footLinks","copyright","ticker","announce","btn"];
 
 const EXT_DEFAULTS={
-  wallet:{enabled:true,autoplay:true,loop:true,speed:1},
+  /* bgMode: auto = detect transparency / solid background automatically, none = show the file exactly as it is,
+     key = always remove the solid background colour. tolerance = how strongly the background colour is removed.
+     hevc = optional transparent HEVC (.mov/.mp4) copy for Safari / iPhone, which cannot show WebM transparency. */
+  wallet:{enabled:true,autoplay:true,loop:true,speed:1,bgMode:"auto",tolerance:18,hevc:""},
   styles:{},
   colors:{soft:"",muted:"",heading:"",nav:"",cardBg:"",border:"",navHover:"",linkHover:"",btnHoverBg:"",btnHoverText:""},
   brand:{favicon:"",tagline:"",description:"",syncName:true}
@@ -86,21 +89,51 @@ function genCSS(ext){
     if(+s.sizeT>0)out.push(`@media(max-width:1024px){${base}{font-size:${+s.sizeT}px!important}}`);
     if(+s.sizeM>0)out.push(`@media(max-width:600px){${base}{font-size:${+s.sizeM}px!important}}`);
   }
-  const c=ext.colors,ok=v=>v&&/^#[0-9a-f]{3,8}$/i.test(v),root=[];
-  if(ok(c.soft))root.push(`--soft:${c.soft}`);if(ok(c.muted))root.push(`--muted:${c.muted}`);if(ok(c.border))root.push(`--line:${c.border}`);
-  if(root.length)out.push(`:root{${root.join(";")}}`);
-  if(ok(c.heading))out.push(`html body #wallets .head h2,html body .about h2,html body .info h1,html body .sale h3,html body .pdp h1{color:${c.heading}!important}`);
-  if(ok(c.nav))out.push(`html body nav a,html body .ico{color:${c.nav}!important}`);
-  if(ok(c.cardBg))out.push(`html body .pc{background:${c.cardBg}!important}`);
-  if(ok(c.navHover))out.push(`html body nav a:hover{color:${c.navHover}!important}`);
-  if(ok(c.linkHover))out.push(`html body footer li a:hover,html body .contact a:hover{color:${c.linkHover}!important}`);
-  if(ok(c.btnHoverBg))out.push(`html body .btn::before{background:${c.btnHoverBg}!important}`);
-  if(ok(c.btnHoverText))out.push(`html body .btn:hover{color:${c.btnHoverText}!important}`);
+  /* the old detailed colour overrides (ext.colors) are replaced by the 4 simple website colours (look.*),
+     so they are intentionally no longer applied here */
   return out.join("\n");
 }
 function fontsUsed(ext){
   const s=new Set();for(const id in (ext.styles||{})){const f=ext.styles[id]&&ext.styles[id].family;if(f)s.add(f)}return [...s];
 }
+
+/* ---------- wallet video transparency: analysis (used by the storefront AND the admin) ----------
+   Looks at the outer edge of a video frame:
+   - edge pixels are transparent            -> "alpha"  (real transparent video, e.g. WebM VP9 with alpha in Chrome/Firefox/Edge)
+   - edge pixels are one solid colour       -> "solid"  (background removed but exported to MP4/WebM without alpha,
+                                                         or a WebM-alpha file in Safari which ignores alpha)
+   - edge pixels vary (a real scene)        -> "scene"  */
+function edgeStats(d,w,h){
+  const px=[];let low=0,n=0;
+  const add=(x,y)=>{const i=(y*w+x)*4;n++;if(d[i+3]<200)low++;else px.push(i)};
+  for(let x=0;x<w;x++){add(x,0);add(x,1);add(x,h-1);add(x,h-2)}
+  for(let y=2;y<h-2;y++){add(0,y);add(1,y);add(w-1,y);add(w-2,y)}
+  if(low/n>.25)return {kind:"alpha"};
+  const med=c=>{const a=px.map(i=>d[i+c]).sort((x,y)=>x-y);return a[a.length>>1]||0};
+  const key=[med(0),med(1),med(2)];
+  const near=px.filter(i=>Math.hypot(d[i]-key[0],d[i+1]-key[1],d[i+2]-key[2])<42).length/Math.max(1,px.length);
+  return {kind:near>.72?"solid":"scene",key,near};
+}
+const hex2=k=>"#"+k.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("");
+function analyzeVideo(src){
+  return new Promise(res=>{
+    const v=document.createElement("video");let done=false;
+    const fin=r=>{if(done)return;done=true;clearTimeout(tm);try{v.removeAttribute("src");v.load()}catch(e){}res(r)};
+    const tm=setTimeout(()=>fin({kind:"unknown"}),15000);
+    if(!/^blob:/.test(src))v.crossOrigin="anonymous";
+    v.muted=true;v.playsInline=true;v.preload="auto";
+    v.onerror=()=>fin({kind:"error"});
+    v.onloadeddata=()=>{const t=Math.min(.25,(v.duration||1)/3);if(Math.abs(v.currentTime-t)<.01)grab();else{v.onseeked=grab;v.currentTime=t}};
+    function grab(){
+      try{const c=document.createElement("canvas");c.width=96;c.height=96;const x=c.getContext("2d",{willReadFrequently:true});
+        x.drawImage(v,0,0,96,96);const r=edgeStats(x.getImageData(0,0,96,96).data,96,96);if(r.key)r.hex=hex2(r.key);
+        r.w=v.videoWidth;r.h=v.videoHeight;fin(r)}
+      catch(e){fin({kind:"blocked"})}
+    }
+    v.src=src;
+  });
+}
+window.RAAS_analyzeVideo=analyzeVideo;
 
 window.RAAS_ELEMENTS=EL;window.RAAS_EXT_DEFAULTS=EXT_DEFAULTS;window.RAAS_extMerge=mergeExt;window.RAAS_genCSS=genCSS;
 
@@ -119,16 +152,24 @@ mediaList=function(){
     return _mediaList();
   }finally{m.type=keep}
 };
+/* The wallet video is drawn as an isolated object: no rectangle, no frame.
+   No poster image is used on purpose: a poster is a flat rectangle and would show before the first frame. */
+const UA=navigator.userAgent,APPLE_WEBKIT=(/AppleWebKit/.test(UA)&&!/Chrome|Chromium|Edg|Android|OPR/.test(UA))||/CriOS|FxiOS|EdgiOS/.test(UA);
 const _mvHTML=mvHTML;
 mvHTML=function(v){
   if(v.kind!=="video")return _mvHTML(v);
   const w=wal(),auto=w.autoplay!==false&&!RM.matches,loop=w.loop!==false,rate=Math.min(4,Math.max(.1,+w.speed||1));
-  const poster=v.poster||HERO_MEDIA.image||(SETTINGS.hero&&SETTINGS.hero.image)||"";
-  return `<div class="fl"><video src="${esc(v.src)}" ${poster?`poster="${esc(poster)}"`:""} muted playsinline preload="${auto?"auto":"metadata"}" ${loop?"loop":""} ${auto?"autoplay":"controls"} disablepictureinpicture data-rate="${rate}"></video></div>`;
+  const hevc=APPLE_WEBKIT&&w.hevc&&!mq.matches?w.hevc:"",src=hevc||v.src;     // Safari / iPhone: real transparent HEVC copy if uploaded
+  return `<div class="fl"><div class="wv ${hevc?"native":""}" data-mode="${hevc?"none":esc(w.bgMode||"auto")}" data-tol="${+w.tolerance||18}" data-auto="${auto?1:0}">`+
+    `<video src="${esc(src)}" crossorigin="anonymous" data-cors="1" muted playsinline preload="auto" ${loop?"loop":""} ${auto?"autoplay":""} disablepictureinpicture disableremoteplayback data-rate="${rate}"></video><canvas aria-hidden="true"></canvas></div></div>`;
 };
 document.addEventListener("loadedmetadata",e=>{const v=e.target;if(v&&v.tagName==="VIDEO"&&v.dataset.rate)v.playbackRate=+v.dataset.rate},true);
 document.addEventListener("error",e=>{                                         // broken video file -> show the fallback image / built-in wallet
   const v=e.target;if(!v||v.tagName!=="VIDEO"||!v.closest("#media"))return;
+  if(v.dataset.cors==="1"){                                                     // storage without CORS headers: retry plainly (no pixel processing possible)
+    v.dataset.cors="0";v.removeAttribute("crossorigin");const s=v.getAttribute("src");v.removeAttribute("src");v.load();v.setAttribute("src",s);v.load();
+    const b=v.closest(".wv");if(b)b.dataset.nocors="1";return;
+  }
   const img=HERO_MEDIA.image||(SETTINGS.hero&&SETTINGS.hero.image),fl=v.closest(".fl");
   if(fl)fl.innerHTML=img?`<img src="${esc(img)}" alt="" decoding="async">`:`<div class="card3d">${hero3d()}</div>`;
 },true);
@@ -139,6 +180,98 @@ buildMedia=function(){
   if(s===sig&&$("#media").children.length)return;
   sig=s;_buildMedia();
 };
+
+/* 1b) transparent wallet renderer.
+   - real alpha video (WebM VP9 alpha / HEVC alpha): the <video> itself is shown, its transparency is kept.
+   - solid background (e.g. MP4, which can never carry transparency): every frame is drawn on a WebGL canvas and the
+     background colour is removed. Only background that is CONNECTED to the frame edge is removed (flood fill), so dark
+     or light parts inside the wallet are kept even if they are close to the background colour. Edges are de-fringed. */
+const VS="attribute vec2 p;varying vec2 u;void main(){u=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}";
+const FS="precision mediump float;varying vec2 u;uniform sampler2D v;uniform sampler2D m;uniform vec3 k;uniform float t;uniform float s;"+
+  "void main(){vec4 c=texture2D(v,u);float ca=smoothstep(t,t+s,distance(c.rgb,k));float mm=texture2D(m,u).r;"+
+  "float band=clamp(mm*2.,0.,1.);float core=smoothstep(.75,.98,mm);float a=(1.-band*(1.-ca))*(1.-core);"+
+  "vec3 f=a>.02?clamp((c.rgb-k*(1.-a))/a,0.,1.):c.rgb;gl_FragColor=vec4(f*a,a);}";
+function makeGL(cv){
+  const gl=cv.getContext("webgl",{premultipliedAlpha:true,alpha:true,antialias:false,preserveDrawingBuffer:false});if(!gl)return null;
+  const sh=(t,src)=>{const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s};
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,VS));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(pr);gl.useProgram(pr);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  const loc=gl.getAttribLocation(pr,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  const tex=i=>{const t=gl.createTexture();gl.activeTexture(gl.TEXTURE0+i);gl.bindTexture(gl.TEXTURE_2D,t);
+    [[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE],[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR]].forEach(p=>gl.texParameteri(gl.TEXTURE_2D,p[0],p[1]));return t};
+  const tv=tex(0),tm=tex(1);gl.uniform1i(gl.getUniformLocation(pr,"v"),0);gl.uniform1i(gl.getUniformLocation(pr,"m"),1);
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);gl.clearColor(0,0,0,0);
+  return {gl,tv,tm,uk:gl.getUniformLocation(pr,"k"),ut:gl.getUniformLocation(pr,"t"),us:gl.getUniformLocation(pr,"s")};
+}
+function initWallet(box){
+  if(box._on)return;box._on=1;
+  const v=box.querySelector("video"),cv=box.querySelector("canvas"),wantAuto=box.dataset.auto==="1";
+  let mode=box.dataset.mode||"auto",G=null,key=null,mw=0,mh=0,sx=null,sctx=null,fr=null,fctx=null,mask=null,near=null,q=null,decided=false;
+  const tol=Math.min(.9,Math.max(.02,(+box.dataset.tol||18)/100)),soft=Math.max(.05,tol*.8);
+  const set=st=>{box.classList.remove("native","key","plain");box.classList.add(st);box.classList.add("ok")};
+  if(mode==="none"){set("native");decided=true}
+  const failsafe=setTimeout(()=>{if(!decided){decided=true;set("plain")}},7000);
+  function decide(){
+    if(decided||v.readyState<2)return;
+    if(box.dataset.nocors==="1"){decided=true;set(mode==="none"?"native":"plain");return}
+    let r;try{const c=document.createElement("canvas");c.width=c.height=96;const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(v,0,0,96,96);r=edgeStats(x.getImageData(0,0,96,96).data,96,96)}
+    catch(e){r={kind:"blocked"}}
+    decided=true;clearTimeout(failsafe);
+    if(r.kind==="alpha"&&mode!=="key"){set("native");return}
+    if(r.kind==="blocked"||!r.key){set("plain");return}
+    if(r.kind==="scene"&&mode!=="key"){set("plain");return}
+    key=r.key;startKey();
+  }
+  function startKey(){
+    try{G=makeGL(cv)}catch(e){console.warn("RAAS wallet: WebGL unavailable",e);G=null}
+    if(!G){set("plain");return}
+    const vw=v.videoWidth||720,vh=v.videoHeight||720,sc=Math.min(1,1280/Math.max(vw,vh));
+    cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);G.gl.viewport(0,0,cv.width,cv.height);
+    fr=document.createElement("canvas");fr.width=cv.width;fr.height=cv.height;fctx=fr.getContext("2d");   // one frozen frame feeds BOTH the mask and the picture
+    const ms=Math.min(1,200/Math.max(vw,vh));mw=Math.max(16,Math.round(vw*ms));mh=Math.max(16,Math.round(vh*ms));
+    sx=document.createElement("canvas");sx.width=mw;sx.height=mh;sctx=sx.getContext("2d",{willReadFrequently:true});
+    mask=new Uint8Array(mw*mh);near=new Uint8Array(mw*mh);q=new Int32Array(mw*mh);
+    G.gl.uniform3f(G.uk,key[0]/255,key[1]/255,key[2]/255);G.gl.uniform1f(G.ut,tol);G.gl.uniform1f(G.us,soft);
+    set("key");draw();loop();
+  }
+  function buildMask(){
+    sctx.clearRect(0,0,mw,mh);sctx.drawImage(fr,0,0,mw,mh);const d=sctx.getImageData(0,0,mw,mh).data,lim=(tol+soft*.5)*255,n=mw*mh;
+    for(let i=0,j=0;i<n;i++,j+=4)near[i]=Math.hypot(d[j]-key[0],d[j+1]-key[1],d[j+2]-key[2])<lim?1:0;
+    mask.fill(0);let h=0,t=0;const push=i=>{if(near[i]&&!mask[i]){mask[i]=255;q[t++]=i}};
+    for(let x=0;x<mw;x++){push(x);push((mh-1)*mw+x)}for(let y=0;y<mh;y++){push(y*mw);push(y*mw+mw-1)}
+    while(h<t){const i=q[h++],x=i%mw;if(x>0)push(i-1);if(x<mw-1)push(i+1);if(i>=mw)push(i-mw);if(i<n-mw)push(i+mw)}
+    /* 255 = deep background (always fully removed, also clears compression specks),
+       160 = edge band around the wallet (removed only where the pixel really has the background colour), 0 = wallet */
+    near.set(mask);
+    for(let y=0;y<mh;y++)for(let x=0;x<mw;x++){const i=y*mw+x;if(!near[i])continue;
+      const all=(x===0||near[i-1])&&(x===mw-1||near[i+1])&&(y===0||near[i-mw])&&(y===mh-1||near[i+mw])&&(x===0||y===0||near[i-mw-1])&&(x===mw-1||y===0||near[i-mw+1])&&(x===0||y===mh-1||near[i+mw-1])&&(x===mw-1||y===mh-1||near[i+mw+1]);
+      if(!all)mask[i]=160}
+    for(let pass=0;pass<2;pass++){                                    // widen the edge band a little into the wallet side
+      near.set(mask);for(let y=0;y<mh;y++)for(let x=0;x<mw;x++){const i=y*mw+x;if(near[i])continue;
+        if((x>0&&near[i-1])||(x<mw-1&&near[i+1])||(y>0&&near[i-mw])||(y<mh-1&&near[i+mw]))mask[i]=160}
+    }
+  }
+  function draw(){
+    if(!G||v.readyState<2)return;
+    try{fctx.clearRect(0,0,fr.width,fr.height);fctx.drawImage(v,0,0,fr.width,fr.height);buildMask()}catch(e){console.warn("RAAS wallet",e);set("plain");G=null;return}
+    const gl=G.gl;
+    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,G.tv);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,fr);
+    gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,G.tm);gl.texImage2D(gl.TEXTURE_2D,0,gl.LUMINANCE,mw,mh,0,gl.LUMINANCE,gl.UNSIGNED_BYTE,mask);
+    gl.clear(gl.COLOR_BUFFER_BIT);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  }
+  let last=-1;
+  function loop(){
+    if(!box.isConnected||!G)return;
+    if(v.requestVideoFrameCallback){v.requestVideoFrameCallback(()=>{draw();loop()});return}
+    requestAnimationFrame(()=>{if(v.currentTime!==last){last=v.currentTime;draw()}loop()});
+  }
+  v.addEventListener("loadeddata",()=>{decide();if(G)draw()});
+  v.addEventListener("seeked",()=>{if(G)draw()});
+  if(v.readyState>=2)decide();
+  if(wantAuto){const kick=()=>{if(box.isConnected&&v.paused){const p=v.play();if(p&&p.catch)p.catch(()=>{})}};v.addEventListener("canplay",kick);kick()}
+  box.addEventListener("click",()=>{if(v.paused){const p=v.play();if(p&&p.catch)p.catch(()=>{})}else if(!wantAuto)v.pause()});
+}
+new MutationObserver(()=>document.querySelectorAll("#media .wv").forEach(initWallet)).observe(document.getElementById("media"),{childList:true,subtree:true});
 
 /* 2) wrap applyAll: derive brand-name sync before drawing, then apply extras after */
 const _applyAll=applyAll;
@@ -215,5 +348,6 @@ if(PREVIEW){
 }else window.mark=function(){};
 
 /* if the page already finished its first draw before this file loaded, apply once now */
-if(document.body.classList.contains("ready")||document.getElementById("hTitle").children.length){try{applyExt()}catch(e){}}
+if(document.body.classList.contains("ready")||document.getElementById("hTitle").children.length){try{applyExt();buildMedia()}catch(e){}}
+document.querySelectorAll("#media .wv").forEach(initWallet);
 })();
