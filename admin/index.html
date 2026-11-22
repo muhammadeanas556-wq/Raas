@@ -53,7 +53,13 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
 .colb{border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px;background:#fcfcfc}
-.colb .h{display:grid;grid-template-columns:1fr 56px 90px auto;gap:8px;margin-bottom:10px}
+.colb .h{display:grid;grid-template-columns:1fr 200px 90px auto;gap:8px;margin-bottom:10px;align-items:center}
+.hexf{display:flex;gap:8px;align-items:center}.hexf input{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em}
+.hexf input::placeholder{text-transform:none;letter-spacing:0}
+.swatch{flex:none;width:40px;height:40px;border-radius:6px;border:1px solid #d6d6d6;box-shadow:inset 0 0 0 2px #fff}
+.swatch.empty{background:repeating-conic-gradient(#e9e9e9 0 25%,#fff 0 50%) 0 0/12px 12px!important}
+input.bad{border-color:#b00020!important;background:#fff8f8}
+.hexerr{color:#b00020;font-size:12px;margin:-4px 0 4px}
 .imgs{display:flex;gap:8px;flex-wrap:wrap}
 .im{position:relative;width:74px;height:74px}.im img{width:100%;height:100%;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
 .im button{position:absolute;top:2px;background:#fff;border:1px solid #ccc;border-radius:3px;font-size:10px;padding:0 4px;cursor:pointer}
@@ -76,12 +82,12 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 .b.on{background:#000;color:#fff;border-color:#000}.b.o.on{background:#000;color:#fff}
 .pvw .bar{border-bottom:1px solid var(--line)}.panel a{color:#2563eb}
 #pdbox{border:1px solid var(--line);border-radius:6px;padding:12px;margin:12px 0;background:#fcfcfc;transition:opacity .2s}
-@media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}aside .lg{width:100%}.grid2,.site,.r2,.r3{grid-template-columns:1fr}.site .pane,.pvw{position:static;max-height:none}.pvw iframe{height:70vh}.colb .h{grid-template-columns:1fr 56px}}
+@media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}aside .lg{width:100%}.grid2,.site,.r2,.r3{grid-template-columns:1fr}.site .pane,.pvw{position:static;max-height:none}.pvw iframe{height:70vh}.colb .h{grid-template-columns:1fr 1fr}.colb .h>input:first-child{grid-column:1/-1}.colb .h>button{grid-column:1/-1;justify-self:end}}
 @media print{body *{visibility:hidden}.printable,.printable *{visibility:visible}.printable{position:absolute;left:0;top:0;width:100%}}
 .specrow{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px}
 .mainimg{display:flex;gap:12px;align-items:center}.mainimg .im{position:relative;width:96px;height:96px}.mainimg .im img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--line)}.mainimg .x{position:absolute;top:4px;right:4px;background:#000;color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
 .wsw{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:#fcfcfc;margin-bottom:12px;flex-wrap:wrap}
-@media(max-width:640px){.specrow{grid-template-columns:1fr auto}.specrow input:nth-child(2){grid-column:1/2}.colb .h{grid-template-columns:1fr 56px}}
+@media(max-width:640px){.specrow{grid-template-columns:1fr auto}.specrow input:nth-child(2){grid-column:1/2}}
 </style>
 </head>
 <body>
@@ -120,7 +126,7 @@ if(!cfgS.url||!cfgS.anonKey){document.body.innerHTML='<p style="padding:40px;fon
 const sb=supabase.createClient(cfgS.url,cfgS.anonKey);
 let ME=null,S={};
 const V={};
-const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons"],["wallet","Hero Display (video / image)"],["editor","Visual Editor"],["site","Website"],["account","Account"]];
+const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons & Discounts"],["wallet","Hero Display (video / image)"],["editor","Visual Editor"],["site","Website"],["account","Account"]];
 const STATUSES=["pending","confirmed","processing","shipped","delivered","cancelled"];
 
 async function up(file,folder="uploads"){
@@ -233,7 +239,7 @@ ACT.dupprod=async a=>{
 function prodForm(id){
   const p=id?S.prods.find(x=>x.id===id):{name:"",description:"",price:null,sale_price:null,sku:"",image:"",active:true,featured:false,specs:[],product_colours:[],category_id:((S.cats.find(c=>c.slug==="clothing")||{}).id)||""};
   S.E={id,del:[],image:p.image||(p.product_colours&&[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>(c.images||[])[0]).find(Boolean))||"",specs:(p.specs&&p.specs.length?p.specs:(id?[]:SPEC_PRESETS.map(k=>({k,v:""})))).map(x=>({k:x.k,v:x.v})),cols:[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:c.name,hex:c.hex,stock:c.stock,images:[...(c.images||[])]}))};
-  if(!S.E.cols.length)S.E.cols.push({name:"",hex:"#141414",stock:0,images:[]});
+  if(!S.E.cols.length)S.E.cols.push({name:"",hex:"",stock:0,images:[]});
   S.E.cols.forEach(c=>c.images=[]);   // colours no longer carry photos: one main image per product
   const L=(t,h)=>`<label class="f"><span>${t}</span>${h}</label>`;
   modal(`<h2>${id?"Edit product":"New product"}</h2>
@@ -261,8 +267,21 @@ function prodForm(id){
   drawCols();drawSpecs();drawMain();calcDisc();
 }
 CHG.pvup=async t=>{if(!t.files[0])return;toast("Uploading video…");$("#pvid").value=await up(t.files[0],"video");toast("Video uploaded")};
+/* HEX colour codes: "#000080", "000080", "#fff" are accepted and saved as "#000080" / "#FFFFFF" */
+const normHex=v=>{let h=String(v||"").trim().replace(/^#/,"");if(!/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(h))return null;if(h.length===3)h=h.replace(/./g,"$&$&");return "#"+h.toUpperCase()};
+const HEX_MSG="Enter a valid HEX code, e.g. #000080, #FFFFFF or #FF5733";
+/* updates one colour's swatch the moment its HEX code changes. strict=true also flags incomplete codes (on leaving the field / saving) */
+function paintHex(i,strict){
+  const c=S.E.cols[i],inp=$(`#cols input[data-ci="${i}"][data-cf="hex"]`),sw=$("#sw-"+i),er=$("#he-"+i);if(!inp||!sw)return;
+  const v=String(c.hex||"").trim(),n=normHex(v),typing=!strict&&/^#?[0-9a-f]{0,5}$/i.test(v);
+  sw.style.backgroundColor=n||"";sw.classList.toggle("empty",!n);sw.title=n||"No valid colour yet";
+  const bad=!n&&!(typing||(!strict&&!v));inp.classList.toggle("bad",bad);er.hidden=!bad;
+}
 function drawCols(){
-  $("#cols").innerHTML=S.E.cols.map((c,i)=>`<div class="colb" data-i="${i}"><div class="h"><input data-ci="${i}" data-cf="name" placeholder="Colour name (e.g. Navy Blue)" value="${esc(c.name)}"><input type="color" data-ci="${i}" data-cf="hex" value="${esc(c.hex)}" title="Swatch colour"><input type="number" min="0" data-ci="${i}" data-cf="stock" placeholder="Stock" value="${c.stock}"><button class="b d s" type="button" data-act="delcol" data-i="${i}">Remove</button></div></div>`).join("");
+  $("#cols").innerHTML=S.E.cols.map((c,i)=>`<div class="colb" data-i="${i}"><div class="h"><input data-ci="${i}" data-cf="name" placeholder="Colour name (e.g. Navy Blue)" value="${esc(c.name)}" aria-label="Colour name">
+    <div class="hexf"><i class="swatch" id="sw-${i}" aria-hidden="true"></i><input data-ci="${i}" data-cf="hex" value="${esc(normHex(c.hex)||c.hex||"")}" placeholder="HEX e.g. #000080" maxlength="7" spellcheck="false" autocomplete="off" aria-label="HEX colour code"></div>
+    <input type="number" min="0" data-ci="${i}" data-cf="stock" placeholder="Stock" value="${c.stock}" aria-label="Stock"><button class="b d s" type="button" data-act="delcol" data-i="${i}">Remove</button></div><p class="hexerr" id="he-${i}" hidden>${HEX_MSG}</p></div>`).join("");
+  S.E.cols.forEach((_,i)=>paintHex(i));
   const t=$("#tstock");if(t)t.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0);
 }
 function drawSpecs(){
@@ -275,9 +294,11 @@ ACT.delspec=a=>{S.E.specs.splice(+a.dataset.i,1);drawSpecs()};
 CHG.specpreset=t=>{if(t.value){S.E.specs.push({k:t.value,v:""});drawSpecs();t.value=""}};
 ACT.rmmain=()=>{S.E.image="";drawMain()};
 CHG.mimgup=async t=>{if(!t.files[0])return;toast("Uploading…");S.E.image=await up(t.files[0],"products");drawMain();toast("Image uploaded")};
-$("#mbox").addEventListener("input",e=>{const t=e.target;if(t.dataset.ci!=null){const c=S.E.cols[+t.dataset.ci];c[t.dataset.cf]=t.dataset.cf==="stock"?Math.max(0,parseInt(t.value)||0):t.value;const ts=$("#tstock");if(ts)ts.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0)}
+$("#mbox").addEventListener("input",e=>{const t=e.target;if(t.dataset.ci!=null){const c=S.E.cols[+t.dataset.ci];c[t.dataset.cf]=t.dataset.cf==="stock"?Math.max(0,parseInt(t.value)||0):t.value;if(t.dataset.cf==="hex")paintHex(+t.dataset.ci);const ts=$("#tstock");if(ts)ts.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0)}
   if(t.dataset.si!=null)S.E.specs[+t.dataset.si][t.dataset.sf]=t.value;});
-ACT.addcol=()=>{S.E.cols.push({name:"",hex:"#141414",stock:0,images:[]});drawCols()};
+/* leaving a HEX field: tidy it up (#fff -> #FFFFFF, 000080 -> #000080) or show the error */
+$("#mbox").addEventListener("focusout",e=>{const t=e.target;if(t.dataset&&t.dataset.cf==="hex"&&S.E&&S.E.cols){const i=+t.dataset.ci,n=normHex(t.value);if(n&&t.value!==n){t.value=n;S.E.cols[i].hex=n}paintHex(i,!!t.value.trim())}});
+ACT.addcol=()=>{S.E.cols.push({name:"",hex:"",stock:0,images:[]});drawCols();const n=$$("#cols .colb input[data-cf=name]");n.length&&n[n.length-1].focus()};
 ACT.delcol=a=>{const c=S.E.cols[+a.dataset.i];if(S.E.cols.length<2)throw new Error("A product needs at least one colour");if(c.id)S.E.del.push(c.id);S.E.cols.splice(+a.dataset.i,1);drawCols()};
 ACT.saveprod=async a=>{
   a.disabled=true;
@@ -288,6 +309,9 @@ ACT.saveprod=async a=>{
       featured:$("#pfeat").checked,active:v("pact")==="1",video_url:v("pvid").trim()||null,
       specs:S.E.specs.map(x=>({k:x.k.trim(),v:x.v.trim()})).filter(x=>x.k&&x.v)};
     if(!row.name)throw new Error("Product name is required");
+    const badHex=S.E.cols.findIndex(c=>!normHex(c.hex));
+    if(badHex>-1){paintHex(badHex,true);const f=$(`#cols input[data-ci="${badHex}"][data-cf="hex"]`);f&&f.focus();
+      throw new Error(`Colour ${badHex+1}${S.E.cols[badHex].name.trim()?" ("+S.E.cols[badHex].name.trim()+")":""}: ${HEX_MSG}`)}
     if(row.sale_price!=null){if(row.price==null)throw new Error("Enter the product price before a discounted price");if(!(row.sale_price<row.price))throw new Error("The discounted price must be lower than the product price")}
     if(dtp){if(row.price==null)throw new Error("Enter the original price before adding a discount");const dv=row.discount_value;
       if(!(dv>0))throw new Error("Enter a discount value above zero, or switch the discount off");
@@ -299,7 +323,7 @@ ACT.saveprod=async a=>{
     else{const r=await sb.from("products").insert(row).select("id").single();if(r.error)throw r.error;id=r.data.id}
     if(S.E.del.length){const r=await sb.from("product_colours").delete().in("id",S.E.del);if(r.error)throw r.error}
     const upd=[],ins=[];
-    S.E.cols.forEach((c,i)=>{const r={name:c.name.trim()||"Colour "+(i+1),hex:c.hex,stock:Math.max(0,parseInt(c.stock)||0),images:[],sort:i,product_id:id};c.id?upd.push({...r,id:c.id}):ins.push(r)});
+    S.E.cols.forEach((c,i)=>{const r={name:c.name.trim()||"Colour "+(i+1),hex:normHex(c.hex),stock:Math.max(0,parseInt(c.stock)||0),images:[],sort:i,product_id:id};c.id?upd.push({...r,id:c.id}):ins.push(r)});
     if(upd.length){const r=await sb.from("product_colours").upsert(upd);if(r.error)throw r.error}
     if(ins.length){const r=await sb.from("product_colours").insert(ins);if(r.error)throw r.error}
     closeModal();toast("Product saved. It is live on the website.");V.products();
@@ -390,25 +414,109 @@ V.customers=async()=>{
 };
 ACT.opencust=a=>{const c=S.cust[+a.dataset.i];modal(`<h2>${esc(c.name)}</h2><p class="mut">${esc(c.phone)} ${esc(c.email||"")}<br>${esc(c.address)}</p><h3 style="margin:14px 0 8px">Order history</h3>${c.orders.map(o=>`<p>#${o.number} · ${dt(o.created_at)} · ${money(o.total)} <span class="tag ${o.status}">${o.status}</span></p>`).join("")}<div class="acts"><button class="b o" data-act="close">Close</button></div>`)};
 
-/* ---------------- coupons ---------------- */
+/* ---------------- coupons & discounts ---------------- */
+const CP_SCOPES={all:"Entire website",products:"Specific products",categories:"Specific categories"};
+function cpStatus(c){const now=Date.now();
+  if(!c.active)return ["Inactive","cancelled"];
+  if(c.ends_at&&Date.parse(c.ends_at)<=now)return ["Expired","cancelled"];
+  if(c.starts_at&&Date.parse(c.starts_at)>now)return ["Scheduled","pending"];
+  if(c.max_uses!=null&&c.used>=c.max_uses)return ["Used up","cancelled"];
+  return ["Live","delivered"]}
+const cpValue=c=>c.type==="percent"?(+c.value)+"%":money(c.value);
+function cpScope(c){
+  const names=(ids,list)=>(ids||[]).map(id=>(list.find(x=>x.id===id)||{name:"(deleted)"}).name);
+  if(c.scope==="products"){const n=names(c.product_ids,S.cpProds);return `<b>${n.length} product${n.length===1?"":"s"}</b><br><span class="mut">${esc(n.slice(0,2).join(", "))}${n.length>2?" +"+(n.length-2):""}</span>`}
+  if(c.scope==="categories"){const n=names(c.category_ids,S.cats);return `<b>Categories</b><br><span class="mut">${esc(n.join(", "))}</span>`}
+  return "Entire website"}
 V.coupons=async()=>{
-  const r=await sb.from("coupons").select("*").order("code");if(r.error)throw r.error;S.coupons=r.data;
-  $("#view").innerHTML=`<div class="bar"><button class="b" data-act="newcoupon">+ Add coupon</button></div><div class="tw"><table><tr><th>Code</th><th>Discount</th><th>Valid</th><th>Used</th><th>Active</th><th></th></tr>${r.data.map(c=>`<tr><td><b>${esc(c.code)}</b></td><td>${c.type==="percent"?c.value+"%":money(c.value)}</td><td>${c.starts_at?dt(c.starts_at):"any time"} → ${c.ends_at?dt(c.ends_at):"no end"}</td><td>${c.used}${c.max_uses?" / "+c.max_uses:""}</td><td>${c.active?"Yes":"No"}</td><td><button class="b o s" data-act="editcoupon" data-id="${c.id}">Edit</button> <button class="b d s" data-act="delcoupon" data-id="${c.id}">Delete</button></td></tr>`).join("")||'<tr><td colspan="6" class="mut">No coupons.</td></tr>'}</table></div>`;
+  const [r,p,c]=await Promise.all([sb.from("coupons").select("*").order("created_at",{ascending:false}),sb.from("products").select("id,name,category_id,active").order("name"),sb.from("categories").select("*").order("sort")]);
+  [r,p,c].forEach(x=>{if(x.error)throw x.error});
+  S.coupons=r.data;S.cpProds=p.data;S.cats=c.data;
+  const st=S.coupons.map(cpStatus).map(x=>x[0]),n=k=>st.filter(x=>x===k).length,card=(l,v)=>`<div class="card"><small>${l}</small><b>${v}</b></div>`;
+  $("#view").innerHTML=`<div class="cards">${card("Coupons",S.coupons.length)}${card("Live now",n("Live"))}${card("Scheduled",n("Scheduled"))}${card("Expired / used up",n("Expired")+n("Used up"))}${card("Inactive",n("Inactive"))}${card("Times used",S.coupons.reduce((a,c)=>a+(c.used||0),0))}</div>
+   <div class="bar"><input id="kq" placeholder="Search coupon code"><select id="kf" data-chg="cplist"><option value="">All statuses</option>${["Live","Scheduled","Expired","Used up","Inactive"].map(s=>`<option>${s}</option>`).join("")}</select><button class="b" data-act="newcoupon">+ Create coupon</button></div>
+   <div class="tw" id="klist"></div>`;
+  $("#kq").addEventListener("input",drawCoupons);drawCoupons();
 };
+CHG.cplist=()=>drawCoupons();
+function drawCoupons(){
+  const q=($("#kq").value||"").trim().toUpperCase(),f=$("#kf").value;
+  const rows=S.coupons.filter(c=>c.code.toUpperCase().includes(q)&&(!f||cpStatus(c)[0]===f));
+  $("#klist").innerHTML=`<table><tr><th>Code</th><th>Discount</th><th>Applies to</th><th>Min. order</th><th>Valid</th><th>Used</th><th>Status</th><th>Active</th><th></th></tr>${rows.map(c=>{const s=cpStatus(c);
+    return `<tr><td><b style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em">${esc(c.code)}</b></td><td><b>${cpValue(c)}</b>${c.type==="percent"?"":' <span class="mut">fixed</span>'}</td><td>${cpScope(c)}</td>
+    <td>${c.min_order!=null?money(c.min_order):'<span class="mut">none</span>'}</td>
+    <td style="white-space:nowrap">${c.starts_at?dt(c.starts_at):"Any time"}<br><span class="mut">→ ${c.ends_at?dt(c.ends_at):"no expiry"}</span></td>
+    <td>${c.used||0}${c.max_uses!=null?" / "+c.max_uses:' <span class="mut">/ ∞</span>'}</td><td><span class="tag ${s[1]}">${s[0]}</span></td>
+    <td><input type="checkbox" ${c.active?"checked":""} data-chg="cptoggle" data-id="${c.id}" aria-label="Active"></td>
+    <td style="white-space:nowrap"><button class="b o s" data-act="editcoupon" data-id="${c.id}">Edit</button> <button class="b d s" data-act="delcoupon" data-id="${c.id}">Delete</button></td></tr>`}).join("")||`<tr><td colspan="9" class="mut">${S.coupons.length?"No coupons match.":'No coupons yet. Click "Create coupon".'}</td></tr>`}</table>`;
+}
+CHG.cptoggle=async t=>{const {error}=await sb.from("coupons").update({active:t.checked}).eq("id",t.dataset.id);if(error){t.checked=!t.checked;throw error}
+  S.coupons.find(c=>c.id===t.dataset.id).active=t.checked;drawCoupons();toast(t.checked?"Coupon activated":"Coupon deactivated")};
 ACT.newcoupon=()=>couponForm(null);ACT.editcoupon=a=>couponForm(a.dataset.id);
 function couponForm(id){
-  const c=id?S.coupons.find(x=>x.id===id):{code:"",type:"percent",value:10,starts_at:null,ends_at:null,max_uses:null,active:true};S.E={id};
-  modal(`<h2>${id?"Edit":"New"} coupon</h2><label class="f"><span>Code</span><input id="kc" value="${esc(c.code)}"></label>
-   <div class="r2"><label class="f"><span>Type</span><select id="kt"><option value="percent" ${c.type==="percent"?"selected":""}>Percent (%)</option><option value="fixed" ${c.type==="fixed"?"selected":""}>Fixed (PKR)</option></select></label><label class="f"><span>Value</span><input id="kv" type="number" min="1" value="${c.value}"></label>
-   <label class="f"><span>Starts</span><input id="ks" type="datetime-local" value="${c.starts_at?toLocal(c.starts_at):""}"></label><label class="f"><span>Expires</span><input id="ke" type="datetime-local" value="${c.ends_at?toLocal(c.ends_at):""}"></label>
-   <label class="f"><span>Usage limit (empty = unlimited)</span><input id="km" type="number" min="1" value="${c.max_uses??""}"></label><label class="tg" style="margin-top:22px"><input type="checkbox" id="ka" ${c.active?"checked":""}> Active</label></div>
-   <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="savecoupon">Save</button></div>`);
+  const c=id?S.coupons.find(x=>x.id===id):{code:"",type:"percent",value:10,scope:"all",product_ids:[],category_ids:[],starts_at:null,ends_at:null,max_uses:null,min_order:null,used:0,active:true};
+  S.E={id,scope:c.scope||"all",pids:new Set(c.product_ids||[]),cids:new Set(c.category_ids||[]),used:c.used||0};
+  const L=(t,h,hint)=>`<label class="f"><span>${t}</span>${h}${hint?`<small class="mut" style="font-size:12px">${hint}</small>`:""}</label>`;
+  modal(`<h2>${id?"Edit coupon":"Create coupon"}</h2>
+   <div class="r2">${L("Coupon code",`<div class="cp"><input id="kc" value="${esc(c.code)}" placeholder="e.g. WELCOME10" maxlength="30" spellcheck="false" autocomplete="off" style="text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em"><button class="b o s" type="button" data-act="gencode" style="white-space:nowrap">Generate</button></div>`,"Letters, numbers, - and _ (3 to 30 characters). Customers can type it in any letter case.")}
+   ${L("Status",`<select id="ka"><option value="1" ${c.active?"selected":""}>Active</option><option value="0" ${!c.active?"selected":""}>Inactive</option></select>`)}</div>
+   <div class="r2">${L("Discount type",`<select id="kt" data-chg="cpcalc"><option value="percent" ${c.type!=="fixed"?"selected":""}>Percentage (%)</option><option value="fixed" ${c.type==="fixed"?"selected":""}>Fixed amount (PKR)</option></select>`)}
+   ${L("Discount amount",`<input id="kv" type="number" min="1" max="100" step="1" value="${c.value??""}">`)}</div>
+   <p id="kcalc" class="mut" style="margin:-4px 0 12px"></p>
+   <div class="f"><span>Coupon applies to</span><div class="tabs" style="margin:0">${Object.entries(CP_SCOPES).map(([k,l])=>`<button type="button" class="b o s ${S.E.scope===k?"on":""}" data-act="cpscope" data-s="${k}">${l}</button>`).join("")}</div></div>
+   <div id="kpick"></div>
+   <div class="r2">${L("Start date (optional)",`<input id="ks" type="datetime-local" value="${c.starts_at?toLocal(c.starts_at):""}">`,"Empty = active immediately")}
+   ${L("Expiry date (optional)",`<input id="ke" type="datetime-local" value="${c.ends_at?toLocal(c.ends_at):""}">`,"Empty = never expires")}</div>
+   <div class="r2">${L("Usage limit (optional)",`<input id="km" type="number" min="1" step="1" value="${c.max_uses??""}" placeholder="Unlimited">`,`Total times this code can be used by all customers.${id?` Used so far: <b>${S.E.used}</b>.`:""}`)}
+   ${L("Minimum order amount (optional, PKR)",`<input id="kmin" type="number" min="0" step="1" value="${c.min_order??""}" placeholder="No minimum">`,"Checked against the cart subtotal.")}</div>
+   <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="savecoupon">${id?"Save changes":"Create coupon"}</button></div>`,true);
+  drawPick();cpCalc();
+  $("#kv").addEventListener("input",cpCalc);
 }
-ACT.savecoupon=async()=>{
-  const row={code:$("#kc").value.trim().toUpperCase(),type:$("#kt").value,value:+$("#kv").value,starts_at:$("#ks").value?new Date($("#ks").value).toISOString():null,ends_at:$("#ke").value?new Date($("#ke").value).toISOString():null,max_uses:$("#km").value?+$("#km").value:null,active:$("#ka").checked};
-  if(!row.code||!(row.value>0))throw new Error("Code and a value above zero are required");
-  const r=S.E.id?await sb.from("coupons").update(row).eq("id",S.E.id):await sb.from("coupons").insert(row);if(r.error)throw r.error;closeModal();toast("Saved");V.coupons()};
-ACT.delcoupon=async a=>{if(!confirm("Delete this coupon?"))return;const r=await sb.from("coupons").delete().eq("id",a.dataset.id);if(r.error)throw r.error;V.coupons()};
+CHG.cpcalc=()=>{$("#kv").max=$("#kt").value==="percent"?100:"";cpCalc()};
+function cpCalc(){const t=$("#kt").value,v=+$("#kv").value,ex=5000;
+  if(!(v>0)){$("#kcalc").textContent="";return}
+  const d=t==="percent"?Math.round(ex*Math.min(v,100)/100):Math.min(ex,v);
+  $("#kcalc").textContent=`Example: an order of ${money(ex)} → ${money(d)} off → customer pays ${money(ex-d)}${S.E.scope!=="all"?" (only for the selected "+(S.E.scope==="products"?"products":"categories")+")":""}.`}
+ACT.gencode=()=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<8;i++)s+=a[Math.floor(Math.random()*a.length)];$("#kc").value=s};
+ACT.cpscope=a=>{S.E.scope=a.dataset.s;$$("[data-act=cpscope]").forEach(b=>b.classList.toggle("on",b===a));drawPick();cpCalc()};
+function drawPick(){
+  const box=$("#kpick");if(S.E.scope==="all"){box.innerHTML="";return}
+  const isP=S.E.scope==="products",list=isP?S.cpProds:S.cats,set=isP?S.E.pids:S.E.cids;
+  box.innerHTML=`<div class="panel" style="padding:12px"><div class="cp" style="margin-bottom:8px"><input id="kps" placeholder="Search ${isP?"products":"categories"}"><span class="mut" style="align-self:center;white-space:nowrap" id="kpn"></span></div>
+    <div id="kpl" style="max-height:220px;overflow:auto;display:grid;gap:2px"></div></div>`;
+  const draw=()=>{const q=$("#kps").value.toLowerCase();
+    $("#kpl").innerHTML=list.filter(x=>x.name.toLowerCase().includes(q)).map(x=>`<label class="tg" style="margin:0;padding:6px 4px;border-bottom:1px solid var(--line)"><input type="checkbox" data-chg="cppick" value="${x.id}" ${set.has(x.id)?"checked":""}> ${esc(x.name)}${x.active===false?' <span class="mut">(hidden)</span>':""}</label>`).join("")||`<p class="mut">No ${isP?"products":"categories"} found.</p>`;
+    $("#kpn").textContent=set.size+" selected"};
+  $("#kps").addEventListener("input",draw);draw();
+}
+CHG.cppick=t=>{const set=S.E.scope==="products"?S.E.pids:S.E.cids;t.checked?set.add(t.value):set.delete(t.value);$("#kpn").textContent=set.size+" selected"};
+ACT.savecoupon=async a=>{
+  const v=i=>$("#"+i).value.trim(),num=i=>v(i)===""?null:+v(i);
+  const row={code:v("kc").toUpperCase(),type:v("kt"),value:num("kv"),scope:S.E.scope,
+    product_ids:S.E.scope==="products"?[...S.E.pids]:[],category_ids:S.E.scope==="categories"?[...S.E.cids]:[],
+    starts_at:v("ks")?new Date(v("ks")).toISOString():null,ends_at:v("ke")?new Date(v("ke")).toISOString():null,
+    max_uses:num("km"),min_order:num("kmin"),active:v("ka")==="1"};
+  if(!/^[A-Z0-9_-]{3,30}$/.test(row.code))throw new Error("Coupon code: use 3 to 30 letters, numbers, - or _ (no spaces)");
+  if(!(row.value>0))throw new Error("Enter a discount amount above zero");
+  if(row.type==="percent"&&row.value>100)throw new Error("A percentage discount cannot be more than 100%");
+  if(row.scope==="products"&&!row.product_ids.length)throw new Error("Select at least one product, or choose Entire website");
+  if(row.scope==="categories"&&!row.category_ids.length)throw new Error("Select at least one category, or choose Entire website");
+  if(row.starts_at&&row.ends_at&&row.ends_at<=row.starts_at)throw new Error("The expiry date must be after the start date");
+  if(row.max_uses!=null&&(!Number.isInteger(row.max_uses)||row.max_uses<1))throw new Error("Usage limit must be a whole number of 1 or more (or empty for unlimited)");
+  if(row.max_uses!=null&&row.max_uses<S.E.used&&!confirm(`This coupon was already used ${S.E.used} times, more than the new limit of ${row.max_uses}. It will stop working. Continue?`))return;
+  if(row.min_order!=null&&!(row.min_order>=0))throw new Error("Minimum order amount cannot be negative");
+  if(!S.E.id&&row.ends_at&&Date.parse(row.ends_at)<=Date.now()&&!confirm("The expiry date is in the past, so this coupon will not work. Save anyway?"))return;
+  a.disabled=true;
+  try{
+    const r=S.E.id?await sb.from("coupons").update(row).eq("id",S.E.id):await sb.from("coupons").insert(row);
+    if(r.error){if(r.error.code==="23505")throw new Error(`A coupon with the code ${row.code} already exists`);throw r.error}
+    closeModal();toast(S.E.id?"Coupon saved":"Coupon created");V.coupons();
+  }finally{a.disabled=false}
+};
+ACT.delcoupon=async a=>{const c=S.coupons.find(x=>x.id===a.dataset.id);
+  if(!confirm(`Delete coupon ${c?c.code:""}? Customers will no longer be able to use it. Orders that already used it are kept.`))return;
+  const r=await sb.from("coupons").delete().eq("id",a.dataset.id);if(r.error)throw r.error;toast("Coupon deleted");V.coupons()};
 
 /* ---------------- website customization (schema-driven, with live preview) ---------------- */
 const getP=(o,k)=>k.split(".").reduce((a,x)=>a&&a[x],o);

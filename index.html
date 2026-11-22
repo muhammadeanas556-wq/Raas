@@ -233,6 +233,20 @@ body.nosc{overflow:hidden}
 .form input:focus,.form textarea:focus{border-color:var(--acc)}
 .form input::placeholder,.form textarea::placeholder{color:var(--faint)}
 .note{font-size:12px;color:var(--muted);margin-top:10px}
+/* discount code box at checkout */
+.cpn{margin:2px 0 14px;padding:14px;border:1px dashed color-mix(in srgb,var(--text) 22%,transparent);border-radius:calc(var(--radius)*.6)}
+.cpn>b{display:block;font-size:13px;font-weight:600;letter-spacing:.02em;margin-bottom:10px}
+.cpnrow{display:flex;gap:8px}
+.cpnrow input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:calc(var(--radius)*.6);font:inherit;letter-spacing:.06em;text-transform:uppercase;outline:0;transition:border-color .3s}
+.cpnrow input::placeholder{text-transform:none;letter-spacing:0;color:var(--faint)}
+.cpnrow input:focus{border-color:var(--acc)}.cpnrow input.bad{border-color:#e5484d}
+.cpnrow .btn{min-height:46px;padding:0 22px;flex:none}.cpnrow .btn[disabled]{opacity:.55;pointer-events:none}
+.cpmsg{font-size:12.5px;margin-top:8px;line-height:1.45}.cpmsg.err{color:#e5484d}.cpmsg.ok{color:var(--muted)}
+.cpchip{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;flex-wrap:wrap}
+.cpchip i{font-style:normal;color:var(--acc);margin-right:6px}.cpchip b{letter-spacing:.06em}
+.cpchip button{font-size:12px;text-decoration:underline;color:var(--muted)}.cpchip button:hover{color:var(--text)}
+.row.disc span:last-child{color:var(--acc);font-weight:600}.row.cpl span:last-child{letter-spacing:.06em}
+@media(max-width:600px){.cpnrow input{font-size:16px}.cpnrow .btn{padding:0 16px}}
 .cur{position:fixed;width:34px;height:34px;border-radius:50%;pointer-events:none;z-index:200;mix-blend-mode:difference;border:1px solid #fff;transform:translate(-50%,-50%);transition:width .3s,height .3s,background .3s;display:none}
 .cur.big{width:70px;height:70px;background:#fff}
 @media (hover:hover) and (pointer:fine){.cur{display:block}}
@@ -696,29 +710,81 @@ function totals(){
   const ship=!cart.length?0:(d.freeAbove!=null&&sub>=d.freeAbove)?0:(d.charge||0);
   return {sub,ship,tot:sub+ship};
 }
+/* ---------- discount code: checked and priced on the server (apply_coupon); the browser never decides the discount ---------- */
+let COUPON=null;   // {code, q: server quote {subtotal, discount, delivery, total, type, value, ...}, sig}
+const cartSig=()=>cart.map(i=>i.cid+"x"+i.qty).join(",");
+const pkr=n=>"PKR "+Number(n||0).toLocaleString("en-PK");
+function couponMsg(m,ok){const el=$("#cpmsg");if(!el)return;el.textContent=m||"";el.className="cpmsg"+(m?(ok?" ok":" err"):"");const i=$("#cpin");if(i)i.classList.toggle("bad",!!m&&!ok)}
+function friendlyErr(e){const m=e&&e.message||"";return /fetch|network|timeout|failed/i.test(m)&&!/discount|code|item|stock|cart/i.test(m)?T("couponNetErr"):m}
+function drawCoupon(){
+  const el=$("#cpn");if(!el)return;
+  if(COUPON&&COUPON.q){const q=COUPON.q;
+    el.innerHTML=`<div class="cpchip"><span><i>✓</i><b>${esc(q.code)}</b> ${esc(T("couponApplied"))} · ${q.type==="percent"?esc(T("pctOff").replace("{n}",+q.value)):esc(T("saveAmt").replace("{n}",Number(q.discount).toLocaleString("en-PK")))}</span><button type="button" id="cprm">${T("couponRemove")}</button></div><p class="cpmsg" id="cpmsg"></p>`;
+  }else{
+    el.innerHTML=`<b>${esc(T("haveCode"))}</b><div class="cpnrow"><input id="cpin" name="cpcode" placeholder="${esc(T("coupon"))}" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30" aria-label="${esc(T("haveCode"))}"><button type="button" class="btn" id="cpapply"><span>${T("couponApply")}</span></button></div><p class="cpmsg" id="cpmsg" role="status" aria-live="polite"></p>`;
+  }
+}
+function drawTotals(){
+  const el=$("#ctot");if(!el)return;
+  const t=totals(),q=COUPON&&COUPON.sig===cartSig()?COUPON.q:null,del=v=>SETTINGS.delivery.charge==null?T("atCheckout"):v?pkr(v):T("free");
+  el.innerHTML=q?`
+   <div class="row"><span>${T("subtotal")}</span><span>${pkr(q.subtotal)}</span></div>
+   <div class="row cpl"><span>${T("couponLbl")}</span><span>${esc(q.code)}</span></div>
+   <div class="row disc"><span>${T("discountLbl")}${q.type==="percent"?" ("+(+q.value)+"%)":""}</span><span>−${pkr(q.discount)}</span></div>
+   <div class="row"><span>${T("delivery")}</span><span>${del(q.delivery)}</span></div>
+   <div class="row tot"><span>${T("total")}</span><span>${pkr(q.total)}</span></div>`:`
+   <div class="row"><span>${T("subtotal")}</span><span>PKR ${t.sub.toLocaleString("en-PK")}</span></div>
+   <div class="row"><span>${T("delivery")}</span><span>${del(t.ship)}</span></div>
+   <div class="row tot"><span>${T("total")}</span><span>PKR ${t.tot.toLocaleString("en-PK")}</span></div>`;
+}
+/* asks the server to check the code against the current cart. Returns true when the code was applied. */
+async function applyCoupon(code,quiet){
+  code=String(code||"").trim();
+  if(!code){couponMsg(T("couponEmpty"));$("#cpin")&&$("#cpin").focus();return false}
+  if(!sb){couponMsg(T("noBackend"));return false}
+  if(!cart.length)return false;
+  if(cart.some(i=>!i.cid)){couponMsg("Some items cannot be ordered right now.");return false}
+  const sig=cartSig(),btn=$("#cpapply");if(btn)btn.disabled=true;
+  let data,error;
+  try{({data,error}=await sb.rpc("apply_coupon",{code,items:cart.map(i=>({colour_id:i.cid,qty:i.qty}))}))}catch(e){error=e}
+  if(btn)btn.disabled=false;
+  if(sig!==cartSig())return applyCoupon(code,quiet);          // the cart changed while we were checking
+  if(error||!data){
+    const was=COUPON;COUPON=null;drawCoupon();drawTotals();
+    const i=$("#cpin");if(i)i.value=code;
+    couponMsg(was&&quiet?T("couponRemoved").replace("{c}",was.code)+" "+friendlyErr(error):friendlyErr(error));
+    return false}
+  COUPON={code:data.code,q:data,sig};drawCoupon();drawTotals();
+  couponMsg(T("couponSaved").replace("{n}",Number(data.discount).toLocaleString("en-PK")),true);
+  return true;
+}
+const removeCoupon=()=>{COUPON=null;drawCoupon();drawTotals();const i=$("#cpin");if(i)i.focus()};
 let coMode=false;
 function drawCart(checkout){coMode=!!checkout;
   $("#cnt").textContent=cart.reduce((s,i)=>s+i.qty,0);
   $("#cbody").innerHTML=cart.length?cart.map((i,n)=>`<div class="ci"><div class="t">${frameHTML(i.img,0,i.hex)}</div>
     <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small><div class="qtyc"><button type="button" data-dec="${n}" aria-label="Less"${i.qty<=1?" disabled":""}>&minus;</button><output>${i.qty}</output><button type="button" data-inc="${n}" aria-label="More"${i.qty>=10?" disabled":""}>+</button></div><button class="rm" data-rm="${n}">${T("remove")}</button></div>
     <div>${money(i.price)}</div></div>`).join(""):'<p class="empty">${T("emptyCart")}</p>';
-  const t=totals();
-  $("#cfoot").innerHTML=cart.length?`
-   <div class="row"><span>${T("subtotal")}</span><span>PKR ${t.sub.toLocaleString("en-PK")}</span></div>
-   <div class="row"><span>${T("delivery")}</span><span>${SETTINGS.delivery.charge==null?T("atCheckout"):t.ship?"PKR "+t.ship:T("free")}</span></div>
-   <div class="row tot"><span>${T("total")}</span><span>PKR ${t.tot.toLocaleString("en-PK")}</span></div>
-   ${checkout?`<form class="form" id="co"><input required name="name" placeholder="${T("fullName")}" autocomplete="name"><input required name="phone" inputmode="tel" placeholder="${T("phone")}" pattern="[0-9+ -]{10,16}" autocomplete="tel"><textarea required name="addr" rows="2" placeholder="${T("address")}"></textarea><input required name="city" placeholder="${T("city")}" autocomplete="address-level2"><input name="coupon" placeholder="${T("coupon")}"><label style="font-size:13px"><input type="radio" checked> ${T("cod")}</label><button class="btn" type="submit"><span>${T("placeOrder")}</span></button></form><p class="note" id="conote">${T("couponNote")}</p>`:`<button class="btn" id="tocheck" style="width:100%;margin-top:14px"><span>${T("checkout")}</span></button>`}`:"";
+  if(!cart.length)COUPON=null;
+  $("#cfoot").innerHTML=cart.length?`${checkout?'<div class="cpn" id="cpn"></div>':""}<div id="ctot"></div>
+   ${checkout?`<form class="form" id="co"><input required name="name" placeholder="${T("fullName")}" autocomplete="name"><input required name="phone" inputmode="tel" placeholder="${T("phone")}" pattern="[0-9+ -]{10,16}" autocomplete="tel"><textarea required name="addr" rows="2" placeholder="${T("address")}"></textarea><input required name="city" placeholder="${T("city")}" autocomplete="address-level2"><label style="font-size:13px"><input type="radio" checked> ${T("cod")}</label><button class="btn" type="submit"><span>${T("placeOrder")}</span></button></form><p class="note" id="conote"></p>`:`<button class="btn" id="tocheck" style="width:100%;margin-top:14px"><span>${T("checkout")}</span></button>`}`:"";
+  drawCoupon();drawTotals();
+  if(COUPON&&COUPON.sig!==cartSig()){clearTimeout(drawCart.t);const c=COUPON.code;drawCart.t=setTimeout(()=>{if(COUPON&&COUPON.code===c&&COUPON.sig!==cartSig())applyCoupon(c,true)},250)}
 }
+/* coupon box: Apply button, Enter key, Remove */
+$("#cfoot").addEventListener("click",e=>{if(e.target.closest("#cpapply"))applyCoupon($("#cpin").value);if(e.target.closest("#cprm"))removeCoupon()});
+$("#cfoot").addEventListener("keydown",e=>{if(e.target.id==="cpin"&&e.key==="Enter"){e.preventDefault();applyCoupon(e.target.value)}});
+$("#cfoot").addEventListener("input",e=>{if(e.target.id==="cpin"&&$("#cpmsg").classList.contains("err"))couponMsg("")});
 $("#cbody").addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
   const r=b.dataset.rm,inc=b.dataset.inc,dec=b.dataset.dec;
   if(r==null&&inc==null&&dec==null)return;
-  const keep={};$$("#co input,#co textarea").forEach(x=>{if(x.name)keep[x.name]=x.value});
+  const keep={};$$("#cfoot input,#cfoot textarea").forEach(x=>{if(x.name)keep[x.name]=x.value});
   if(r!=null)cart.splice(+r,1);
   else if(inc!=null)cart[+inc].qty=Math.min(10,cart[+inc].qty+1);
   else if(dec!=null)cart[+dec].qty=Math.max(1,cart[+dec].qty-1);
   save();drawCart(coMode&&cart.length>0);
-  $$("#co input,#co textarea").forEach(x=>{if(keep[x.name]!=null)x.value=keep[x.name]});
+  $$("#cfoot input,#cfoot textarea").forEach(x=>{if(keep[x.name]!=null)x.value=keep[x.name]});
 });
 $("#cfoot").addEventListener("click",e=>{if(e.target.closest("#tocheck"))drawCart(true)});
 /* ---------- send each placed order to Google Sheets (never blocks or breaks the real order) ---------- */
@@ -734,14 +800,21 @@ $("#cfoot").addEventListener("submit",async e=>{e.preventDefault();
   const note=$("#conote"),f=new FormData(e.target),btn=e.target.querySelector("button");
   if(!sb){note.textContent=T("noBackend");return}
   if(cart.some(i=>!i.cid)){note.textContent="Some items cannot be ordered right now.";return}
+  /* a code typed but not applied yet: check it first so the customer sees the new total before ordering */
+  const typed=$("#cpin")?$("#cpin").value.trim():"";
+  if(!COUPON&&typed){note.textContent="";if(await applyCoupon(typed))note.textContent=T("couponCheckTotal");return}
+  if(COUPON&&COUPON.sig!==cartSig()&&!(await applyCoupon(COUPON.code,true)))return;
   btn.disabled=true;
-  const {data,error}=await sb.rpc("place_order",{payload:{name:f.get("name"),phone:f.get("phone"),address:f.get("addr"),city:f.get("city"),coupon:f.get("coupon")||"",items:cart.map(i=>({colour_id:i.cid,qty:i.qty}))}});
+  const {data,error}=await sb.rpc("place_order",{payload:{name:f.get("name"),phone:f.get("phone"),address:f.get("addr"),city:f.get("city"),coupon:COUPON?COUPON.code:"",items:cart.map(i=>({colour_id:i.cid,qty:i.qty}))}});
   btn.disabled=false;
-  if(error){note.textContent=error.message;return}
+  if(error){note.textContent=friendlyErr(error);
+    if(COUPON&&/discount code/i.test(error.message||"")){const c=COUPON.code;COUPON=null;drawCoupon();drawTotals();couponMsg(T("couponRemoved").replace("{c}",c)+" "+error.message);note.textContent=T("couponCheckTotal")}
+    return}
   sendToSheet({name:f.get("name"),phone:f.get("phone"),address:f.get("addr")+", "+f.get("city"),items:cart.map(i=>({product:i.name,colour:i.colour,price:i.price,quantity:i.qty}))});
-  cart=[];save();drawCart();
+  cart=[];COUPON=null;save();drawCart();
   $("#cbody").innerHTML=`<p class="empty">${esc(T("orderDone")).replace("{n}","#"+data.number)}</p>`;
-  $("#cfoot").innerHTML=`<div class="row tot"><span>${T("total")} (${T("cod")})</span><span>PKR ${Number(data.total).toLocaleString("en-PK")}</span></div>`;
+  $("#cfoot").innerHTML=(+data.discount>0?`<div class="row"><span>${T("subtotal")}</span><span>${pkr(data.subtotal)}</span></div><div class="row disc"><span>${T("discountLbl")} (${esc(data.coupon||"")})</span><span>−${pkr(data.discount)}</span></div>`:"")+
+    `<div class="row tot"><span>${T("total")} (${T("cod")})</span><span>PKR ${Number(data.total).toLocaleString("en-PK")}</span></div>`;
 });
 const openCart=c=>{drawCart(c);$("#drawer").scrollTop=0;$("#drawer").classList.add("on");$("#shade").classList.add("on");document.body.classList.add("nosc")};
 const closeCart=()=>{$("#drawer").classList.remove("on");$("#shade").classList.remove("on");document.body.classList.remove("nosc")};

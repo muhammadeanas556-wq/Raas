@@ -30,7 +30,9 @@ const D={
     colour:"COLOUR",addToCart:"ADD TO CART",buyNow:"BUY NOW",deliveryTitle:"DELIVERY",specsTitle:"PRODUCT DETAILS",offerEnds:"Offer ends in",zoom:"ZOOM",
     closeBtn:"CLOSE ✕",yourCart:"YOUR CART",emptyCart:"Your cart is empty.",remove:"Remove",subtotal:"Subtotal",delivery:"Delivery",total:"Total",
     atCheckout:"Set at checkout",free:"Free",checkout:"CHECKOUT",placeOrder:"PLACE ORDER",fullName:"Full name",phone:"Phone number (03XX XXXXXXX)",address:"Complete address",city:"City",
-    coupon:"Discount code (optional)",cod:"Cash on Delivery",couponNote:"The discount code is checked when you place the order.",
+    coupon:"Enter discount code",cod:"Cash on Delivery",couponNote:"The discount code is checked when you place the order.",
+    haveCode:"Have a discount code?",couponApply:"APPLY",couponRemove:"Remove",couponApplied:"applied",couponLbl:"Coupon",discountLbl:"Discount",
+    couponEmpty:"Please enter a discount code.",couponSaved:"You save PKR {n} on this order.",couponRemoved:"Code {c} was removed:",couponCheckTotal:"Your discount has been applied. Please check the new total, then press Place order.",couponNetErr:"Could not check the code right now. Please try again.",
     footShop:"SHOP",footFollow:"FOLLOW",footPolicies:"POLICIES",privacy:"Privacy Policy",returns:"Return and Exchange Policy",copyright:"© RAAS. All rights reserved.",
     instagram:"Instagram",whatsapp:"WhatsApp",facebook:"Facebook",tiktok:"TikTok",youtube:"YouTube",days:"Days",hours:"Hours",min:"Min",sec:"Sec",priceTbd:"Price to be set",pctOff:"{n}% OFF",saveAmt:"SAVE PKR {n}",saleLine:"flat {n}% off",video:"VIDEO",cartColour:"Colour",cartQty:"Qty",
     noBackend:"Ordering is not available yet.",orderDone:"Order {n} received. We will call you to confirm it."}

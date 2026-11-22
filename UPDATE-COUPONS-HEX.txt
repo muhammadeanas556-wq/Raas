@@ -1,0 +1,31 @@
+RAAS UPDATE: HEX COLOUR CODES + COUPONS & DISCOUNTS
+
+1. Supabase > SQL Editor > New query: paste and run  supabase/migration-coupons-hex.sql  (once; safe to repeat).
+   - adds coupon settings: applies to (entire website / products / categories), minimum order amount
+   - adds the checkout "Apply" check (apply_coupon) and updates place_order with the new coupon rules
+   - makes the database refuse invalid colour HEX codes
+   Nothing is deleted: products, colours, stock, orders, existing coupons and settings are kept.
+   Note: if you ever run migration-clothing.sql again, run migration-coupons-hex.sql again afterwards.
+
+2. Replace these files in your repo (same folders):
+     index.html                 storefront: "Have a discount code?" box at checkout
+     admin/index.html           admin: HEX colour field, new Coupons & Discounts page
+     shared/config.js           new checkout texts (editable in Admin > Website > All website texts)
+     supabase/schema.sql        for fresh installs only (already includes everything above)
+     supabase/migration-coupons-hex.sql   NEW
+   Do NOT touch: shared/supabase-config.js, shared/raas-extras.js.
+
+3. Hard refresh (Ctrl+F5) the website and the admin.
+
+PRODUCT COLOURS
+ - Each colour row: Colour name + HEX code (e.g. #000080) + stock. The swatch shows the colour as you type.
+ - Accepted: #000080, 000080, #FFF (saved as #FFFFFF). Invalid codes are shown in red and cannot be saved.
+
+COUPONS (Admin > Coupons & Discounts)
+ - Create / edit / delete, switch Active on or off from the list, search and filter by status.
+ - Each coupon: code, percentage (fixed PKR amount also available), applies to, start date, expiry date,
+   usage limit (optional), minimum order amount (optional), Active / Inactive.
+ - Status in the list: Live, Scheduled, Expired, Used up, Inactive.
+ - Discounts are always calculated and checked on the server. One coupon per order.
+ - Usage limit counts all customers together. Cancelling an order gives its coupon use back.
+ - Specific products / categories: only those items are discounted; the minimum order uses the whole cart subtotal.

@@ -29,8 +29,9 @@ supabase/schema.sql     tables, security rules, order functions, storage bucket
 
 ## 3. Using the admin
 - **Website**: every text, colour, font, logo, hero image/video/extra views, each motion effect (on/off + overall speed), section order, sale banner, delivery charges, policies. A live preview on the right updates as you type; **Save & publish** makes it live.
-- **Products**: name, price, discount (percent/fixed with dates), colours with their own stock and 3–4+ photos each, product video, specs. The photos drive the "drag to rotate" viewer.
+- **Products**: name, price, discount (percent/fixed with dates), colours (name + HEX code, e.g. #000080) with their own stock, product video, specs. The photos drive the "drag to rotate" viewer.
 - **Orders**: status changes are recorded in history; cancelling returns stock. Print and CSV export included.
+- **Coupons & Discounts**: percentage codes for the whole site, chosen products or chosen categories, with start/expiry dates, usage limit, minimum order and Active/Inactive. Customers apply them at checkout; the server checks and calculates every discount.
 - Discounts, prices, delivery and stock are always recomputed on the server when an order is placed.
 
 ## What the Website page controls (Admin → Website)
