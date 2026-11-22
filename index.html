@@ -130,7 +130,7 @@ select{padding:10px 36px 10px 16px;border:1px solid var(--line);font:inherit;fon
 .pc .img>div{position:absolute;inset:0;width:100%;height:100%;transition:opacity .5s,transform .9s var(--ease)}
 .pc .img>div>svg,.pc .img>div>img{width:100%;height:100%;object-fit:cover}
 .pc .img .b{opacity:0}
-.pc:hover .img .b{opacity:1}.pc:hover .img .a{transform:scale(1.05)}
+.pc:hover .img .b{opacity:1}.pc:hover .img .a{transform:none}
 .tag{position:absolute;left:12px;top:12px;z-index:2;background:var(--bg);color:var(--text);font-size:10px;font-weight:600;letter-spacing:.12em;padding:6px 10px;border-radius:999px}
 .hint{position:absolute;right:12px;bottom:12px;z-index:2;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--text);font-size:10px;letter-spacing:.1em;padding:6px 10px;border-radius:999px;transform:translateY(8px);opacity:0;transition:.4s var(--ease)}
 .pc:hover .hint{transform:none;opacity:1}
@@ -208,11 +208,19 @@ footer li a{transition:color .3s}footer li a:hover{color:var(--acc)}
 /* cart drawer */
 .shade{position:fixed;inset:0;background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:90;opacity:0;visibility:hidden;transition:.4s}
 .shade.on{opacity:1;visibility:visible}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--bg2);color:var(--text);z-index:95;transform:translateX(100%);transition:transform .6s var(--ease);display:flex;flex-direction:column;border-left:1px solid var(--line)}
-.drawer.on{transform:none}
-.drawer .dh{display:flex;justify-content:space-between;align-items:center;padding:22px 24px;border-bottom:1px solid var(--line)}
-.drawer .db{flex:1;overflow:auto;padding:20px 24px}
-.drawer .df{border-top:1px solid var(--line);padding:20px 24px}
+.drawer{position:fixed;left:50%;top:50%;width:min(520px,94vw);max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg2);color:var(--text);z-index:95;opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-46%) scale(.96);transition:opacity .35s,transform .45s var(--ease),visibility .35s;border:1px solid var(--line);border-radius:calc(var(--radius)*1.2);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.drawer.on{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.drawer .dh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2;background:var(--bg2)}
+.drawer .db{padding:8px 22px 0}
+.drawer .df{border-top:1px solid var(--line);padding:18px 22px 24px}
+.qtyc{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;margin:8px 0 2px}
+.qtyc button{width:32px;height:32px;font-size:17px;line-height:1;color:var(--text)}
+.qtyc button:disabled{opacity:.35}
+.qtyc output{min-width:26px;text-align:center;font-weight:600;font-size:14px}
+body.nosc{overflow:hidden}
+@media(max-width:600px){.drawer{width:94vw;max-height:92vh;max-height:92dvh}.drawer .dh,.drawer .db,.drawer .df{padding-left:16px;padding-right:16px}.form input,.form textarea{font-size:16px}.ci{grid-template-columns:64px 1fr auto}.ci .t{width:64px;height:78px}}
+.pc:hover .img .a>img,.pc:hover .img .a>svg{transform:scale(1.14)}
+.pc .img .a>img,.pc .img .a>svg{transition:transform .9s var(--ease)}
 .ci{display:grid;grid-template-columns:76px 1fr auto;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);animation:fade .5s forwards;opacity:0}
 .ci .t{width:76px;height:92px;background:var(--surface);overflow:hidden;border-radius:calc(var(--radius)*.6)}
 .ci .t svg,.ci .t img{width:100%;height:100%;object-fit:cover}
@@ -291,7 +299,7 @@ body:not(.ready) .hero *,body:not(.ready) .stage{animation-play-state:paused}
 .pc.in .img{clip-path:inset(0 round var(--radius))}
 .pc .img .a{transform:scale(1.15)}
 .pc.in .img .a{transform:scale(1)}
-.pc.in:hover .img .a{transform:scale(1.05)}
+.pc.in:hover .img .a{transform:none}
 @keyframes rise{from{opacity:0;transform:translateY(28px)}}
 #pbody.first .gal{animation:rise .9s .15s var(--ease) both}
 #pbody.first .info>*{animation:rise .9s var(--ease) both;animation-delay:calc(.25s + var(--i,0)*.07s)}
@@ -592,8 +600,8 @@ function drawGrid(){
     const c=p.colours[0],f=frames(c),ok=p.colours.some(x=>x.inStock);
     return `<button class="pc rv" style="transition-delay:${(i%4)*80}ms" data-id="${p.id}">
       <div class="img">${p.featured?`<span class="tag">${T("featured")}</span>`:''}${!ok?`<span class="tag">${T("soldOut")}</span>`:''}${off(p)?`<span class="tag sl">${off(p)}</span>`:''}
-        <div class="a">${frameHTML(f[0],0,c.hex)}</div><div class="b">${frameHTML(f[1],1,c.hex)}</div>
-        <span class="hint">${p.video?T("video")+' · ':''}${T("dragHint")}</span></div>
+        <div class="a">${frameHTML(f[0],0,c.hex)}</div>${f[1]?`<div class="b">${frameHTML(f[1],1,c.hex)}</div>`:''}
+        ${(f[1]||p.video)?`<span class="hint">${p.video?T("video")+' · ':''}${f[1]?T("dragHint"):''}</span>`:''}</div>
       <h3>${p.name}</h3><div class="cat">${(SETTINGS.categories.find(x=>x.id===p.category)||{}).name||""}</div>
       <div class="pr">${priceHTML(p)}</div>
       <div class="dots">${p.colours.map(x=>`<i class="dot" style="background:${x.hex}"></i>`).join("")}</div></button>`}).join(""):'<div class="empty">No wallets match. Add products from the Admin Dashboard.</div>';
@@ -701,10 +709,11 @@ function totals(){
   const ship=!cart.length?0:(d.freeAbove!=null&&sub>=d.freeAbove)?0:(d.charge||0);
   return {sub,ship,tot:sub+ship};
 }
-function drawCart(checkout){
+let coMode=false;
+function drawCart(checkout){coMode=!!checkout;
   $("#cnt").textContent=cart.reduce((s,i)=>s+i.qty,0);
   $("#cbody").innerHTML=cart.length?cart.map((i,n)=>`<div class="ci"><div class="t">${frameHTML(i.img,0,i.hex)}</div>
-    <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small><small>${T("cartQty")}: ${i.qty}</small><button class="rm" data-rm="${n}">${T("remove")}</button></div>
+    <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small><div class="qtyc"><button type="button" data-dec="${n}" aria-label="Less"${i.qty<=1?" disabled":""}>&minus;</button><output>${i.qty}</output><button type="button" data-inc="${n}" aria-label="More"${i.qty>=10?" disabled":""}>+</button></div><button class="rm" data-rm="${n}">${T("remove")}</button></div>
     <div>${money(i.price)}</div></div>`).join(""):'<p class="empty">${T("emptyCart")}</p>';
   const t=totals();
   $("#cfoot").innerHTML=cart.length?`
@@ -713,8 +722,27 @@ function drawCart(checkout){
    <div class="row tot"><span>${T("total")}</span><span>PKR ${t.tot.toLocaleString("en-PK")}</span></div>
    ${checkout?`<form class="form" id="co"><input required name="name" placeholder="${T("fullName")}" autocomplete="name"><input required name="phone" inputmode="tel" placeholder="${T("phone")}" pattern="[0-9+ -]{10,16}" autocomplete="tel"><textarea required name="addr" rows="2" placeholder="${T("address")}"></textarea><input required name="city" placeholder="${T("city")}" autocomplete="address-level2"><input name="coupon" placeholder="${T("coupon")}"><label style="font-size:13px"><input type="radio" checked> ${T("cod")}</label><button class="btn" type="submit"><span>${T("placeOrder")}</span></button></form><p class="note" id="conote">${T("couponNote")}</p>`:`<button class="btn" id="tocheck" style="width:100%;margin-top:14px"><span>${T("checkout")}</span></button>`}`:"";
 }
-$("#cbody").addEventListener("click",e=>{const r=e.target.dataset.rm;if(r!=null){cart.splice(+r,1);save();drawCart()}});
+$("#cbody").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const r=b.dataset.rm,inc=b.dataset.inc,dec=b.dataset.dec;
+  if(r==null&&inc==null&&dec==null)return;
+  const keep={};$$("#co input,#co textarea").forEach(x=>{if(x.name)keep[x.name]=x.value});
+  if(r!=null)cart.splice(+r,1);
+  else if(inc!=null)cart[+inc].qty=Math.min(10,cart[+inc].qty+1);
+  else if(dec!=null)cart[+dec].qty=Math.max(1,cart[+dec].qty-1);
+  save();drawCart(coMode&&cart.length>0);
+  $$("#co input,#co textarea").forEach(x=>{if(keep[x.name]!=null)x.value=keep[x.name]});
+});
 $("#cfoot").addEventListener("click",e=>{if(e.target.closest("#tocheck"))drawCart(true)});
+/* ---------- send each placed order to Google Sheets (never blocks or breaks the real order) ---------- */
+const SHEET_URL="https://script.google.com/macros/s/AKfycbyE1JQ4z7q_CrsU7W76wI-updW2rvbH-xZpdR2cjOogMRVkcpXzIfhYLQXY7i1Gz60/exec";
+const SHEET_SECRET="raas25.netlify.app"; /* must be identical to SECRET in Code.gs */
+function sendToSheet(o){
+  try{
+    fetch(SHEET_URL,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify({secret:SHEET_SECRET,name:o.name,phone:o.phone,address:o.address,items:o.items})}).catch(()=>{});
+  }catch(e){}
+}
 $("#cfoot").addEventListener("submit",async e=>{e.preventDefault();
   const note=$("#conote"),f=new FormData(e.target),btn=e.target.querySelector("button");
   if(!sb){note.textContent=T("noBackend");return}
@@ -723,12 +751,13 @@ $("#cfoot").addEventListener("submit",async e=>{e.preventDefault();
   const {data,error}=await sb.rpc("place_order",{payload:{name:f.get("name"),phone:f.get("phone"),address:f.get("addr"),city:f.get("city"),coupon:f.get("coupon")||"",items:cart.map(i=>({colour_id:i.cid,qty:i.qty}))}});
   btn.disabled=false;
   if(error){note.textContent=error.message;return}
+  sendToSheet({name:f.get("name"),phone:f.get("phone"),address:f.get("addr")+", "+f.get("city"),items:cart.map(i=>({product:i.name,colour:i.colour,price:i.price,quantity:i.qty}))});
   cart=[];save();drawCart();
   $("#cbody").innerHTML=`<p class="empty">${esc(T("orderDone")).replace("{n}","#"+data.number)}</p>`;
   $("#cfoot").innerHTML=`<div class="row tot"><span>${T("total")} (${T("cod")})</span><span>PKR ${Number(data.total).toLocaleString("en-PK")}</span></div>`;
 });
-const openCart=c=>{drawCart(c);$("#drawer").classList.add("on");$("#shade").classList.add("on")};
-const closeCart=()=>{$("#drawer").classList.remove("on");$("#shade").classList.remove("on")};
+const openCart=c=>{drawCart(c);$("#drawer").scrollTop=0;$("#drawer").classList.add("on");$("#shade").classList.add("on");document.body.classList.add("nosc")};
+const closeCart=()=>{$("#drawer").classList.remove("on");$("#shade").classList.remove("on");document.body.classList.remove("nosc")};
 $("#cbtn").onclick=()=>openCart();$("#cclose").onclick=closeCart;$("#shade").onclick=closeCart;
 addEventListener("keydown",e=>{if(e.key==="Escape"){closeCart();closeProduct()}});
 
