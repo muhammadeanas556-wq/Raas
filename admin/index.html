@@ -78,6 +78,10 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 #pdbox{border:1px solid var(--line);border-radius:6px;padding:12px;margin:12px 0;background:#fcfcfc;transition:opacity .2s}
 @media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}aside .lg{width:100%}.grid2,.site,.r2,.r3{grid-template-columns:1fr}.site .pane,.pvw{position:static;max-height:none}.pvw iframe{height:70vh}.colb .h{grid-template-columns:1fr 56px}}
 @media print{body *{visibility:hidden}.printable,.printable *{visibility:visible}.printable{position:absolute;left:0;top:0;width:100%}}
+.specrow{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px}
+.mainimg{display:flex;gap:12px;align-items:center}.mainimg .im{position:relative;width:96px;height:96px}.mainimg .im img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--line)}.mainimg .x{position:absolute;top:4px;right:4px;background:#000;color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
+.wsw{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:#fcfcfc;margin-bottom:12px;flex-wrap:wrap}
+@media(max-width:640px){.specrow{grid-template-columns:1fr auto}.specrow input:nth-child(2){grid-column:1/2}.colb .h{grid-template-columns:1fr 56px}}
 </style>
 </head>
 <body>
@@ -116,7 +120,7 @@ if(!cfgS.url||!cfgS.anonKey){document.body.innerHTML='<p style="padding:40px;fon
 const sb=supabase.createClient(cfgS.url,cfgS.anonKey);
 let ME=null,S={};
 const V={};
-const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons"],["wallet","360° Wallet Display"],["editor","Visual Editor"],["site","Website"],["account","Account"]];
+const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons"],["wallet","Hero Display (video / image)"],["editor","Visual Editor"],["site","Website"],["account","Account"]];
 const STATUSES=["pending","confirmed","processing","shipped","delivered","cancelled"];
 
 async function up(file,folder="uploads"){
@@ -184,12 +188,24 @@ V.dashboard=async()=>{
     <div class="panel"><h3>Recent activity</h3>${H.map(h=>`<p>Order #${h.orders?h.orders.number:"?"} → ${h.status} <span class="mut">${dt(h.at)}</span></p>`).join("")||'<p class="mut">Nothing yet.</p>'}</div></div>`;
 };
 
+/* ---------------- Wallets section ON/OFF (no code changes needed) ---------------- */
+const walletsCat=()=>(S.cats||[]).find(c=>c.slug==="wallets");
+function walletSwitch(){const w=walletsCat();
+  return `<div class="wsw"><label class="tg" style="margin:0"><input type="checkbox" data-chg="walletsw" ${w&&w.active?"checked":""}> <b>Wallets section on the website</b></label><span class="mut">${w&&w.active?"ON – visitors can see the Wallets category.":"OFF – the Wallets category and its products are hidden from the public website."}</span></div>`}
+CHG.walletsw=async t=>{
+  const on=t.checked,w=walletsCat();
+  const r=w?await sb.from("categories").update({active:on}).eq("id",w.id):await sb.from("categories").insert({slug:"wallets",name:"Wallets",sort:2,active:on});
+  if(r.error){t.checked=!on;throw r.error}
+  const c=await sb.from("categories").select("*").order("sort");if(!c.error)S.cats=c.data;
+  toast(on?"Wallets section is now ON":"Wallets section is now OFF");
+  const sp=t.closest(".wsw").querySelector(".mut");sp.textContent=on?"ON – visitors can see the Wallets category.":"OFF – the Wallets category and its products are hidden from the public website."};
+
 /* ---------------- products ---------------- */
 V.products=async()=>{
   const [p,c]=await Promise.all([sb.from("products").select("*,product_colours(*),categories(name)").order("created_at",{ascending:false}),sb.from("categories").select("*").order("sort")]);
   if(p.error)throw p.error;if(c.error)throw c.error;
   S.prods=p.data;S.cats=c.data;
-  $("#view").innerHTML=`<div class="bar"><input id="pq" placeholder="Search products" data-chg="plist"><select id="pf" data-chg="plist"><option value="">All</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="featured">Featured</option><option value="out">Out of stock</option></select><button class="b" data-act="newprod">+ Add product</button></div><div class="tw" id="plist"></div>`;
+  $("#view").innerHTML=walletSwitch()+`<div class="bar"><input id="pq" placeholder="Search products" data-chg="plist"><select id="pf" data-chg="plist"><option value="">All</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="featured">Featured</option><option value="out">Out of stock</option></select><button class="b" data-act="newprod">+ Add product</button></div><div class="tw" id="plist"></div>`;
   $("#pq").addEventListener("input",drawProds);drawProds();
 };
 CHG.plist=()=>drawProds();
@@ -197,7 +213,7 @@ function drawProds(){
   const q=($("#pq").value||"").toLowerCase(),f=$("#pf").value;
   const rows=S.prods.filter(p=>p.name.toLowerCase().includes(q)&&(!f||(f==="active"?p.active:f==="inactive"?!p.active:f==="featured"?p.featured:!p.product_colours.some(c=>c.stock>0))));
   $("#plist").innerHTML=`<table><tr><th></th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Active</th><th>Featured</th><th></th></tr>${rows.map(p=>{
-    const cs=[...p.product_colours].sort((a,b)=>a.sort-b.sort),img=cs[0]&&cs[0].images[0],st=cs.reduce((a,c)=>a+c.stock,0);
+    const cs=[...p.product_colours].sort((a,b)=>a.sort-b.sort),img=p.image||(cs[0]&&cs[0].images[0]),st=cs.reduce((a,c)=>a+c.stock,0);
     return `<tr><td>${img?`<img class="th" src="${esc(img)}">`:'<div class="th"></div>'}</td><td><b>${esc(p.name)}</b><br><span class="mut">${cs.length} colour${cs.length===1?"":"s"}</span></td><td>${esc(p.categories?p.categories.name:"—")}</td>
     <td>${discCell(p)}</td>
     <td>${st}</td><td><input type="checkbox" ${p.active?"checked":""} data-chg="ptoggle" data-id="${p.id}" data-f="active"></td><td><input type="checkbox" ${p.featured?"checked":""} data-chg="ptoggle" data-id="${p.id}" data-f="featured"></td>
@@ -215,50 +231,64 @@ ACT.dupprod=async a=>{
   if(product_colours.length){const x=await sb.from("product_colours").insert(product_colours.map(({id,product_id,...c})=>({...c,stock:0,product_id:r.data.id})));if(x.error)throw x.error}
   toast("Duplicated as an inactive draft with zero stock");V.products()};
 function prodForm(id){
-  const p=id?S.prods.find(x=>x.id===id):{name:"",description:"",price:null,active:true,featured:false,specs:[],product_colours:[]};
-  S.E={id,del:[],cols:[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:c.name,hex:c.hex,stock:c.stock,images:[...(c.images||[])]}))};
+  const p=id?S.prods.find(x=>x.id===id):{name:"",description:"",price:null,sale_price:null,sku:"",image:"",active:true,featured:false,specs:[],product_colours:[],category_id:((S.cats.find(c=>c.slug==="clothing")||{}).id)||""};
+  S.E={id,del:[],image:p.image||(p.product_colours&&[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>(c.images||[])[0]).find(Boolean))||"",specs:(p.specs&&p.specs.length?p.specs:(id?[]:SPEC_PRESETS.map(k=>({k,v:""})))).map(x=>({k:x.k,v:x.v})),cols:[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:c.name,hex:c.hex,stock:c.stock,images:[...(c.images||[])]}))};
   if(!S.E.cols.length)S.E.cols.push({name:"",hex:"#141414",stock:0,images:[]});
+  S.E.cols.forEach(c=>c.images=[]);   // colours no longer carry photos: one main image per product
   const L=(t,h)=>`<label class="f"><span>${t}</span>${h}</label>`;
   modal(`<h2>${id?"Edit product":"New product"}</h2>
    ${L("Name",`<input id="pn" value="${esc(p.name)}">`)}
-   <div class="r2">${L("Category",`<select id="pcat"><option value="">— none —</option>${S.cats.map(c=>`<option value="${c.id}" ${p.category_id===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`)}
-   ${L("Original price (PKR)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
+   <div class="r2">${L("Product category",`<select id="pcat"><option value="">— none —</option>${S.cats.map(c=>`<option value="${c.id}" ${p.category_id===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`)}
+   ${L("Product price (PKR)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
+   <div class="r2">${L("Discounted price (PKR, optional)",`<input id="psale" type="number" min="0" value="${p.sale_price??""}" placeholder="leave empty for no discount">`)}${L("SKU (optional)",`<input id="psku" value="${esc(p.sku||"")}">`)}</div>
+   <div class="f"><span>Main product image (only one needed)</span><div class="mainimg"><div id="mimg"></div><label class="b o s">Upload image<input type="file" accept="image/*" hidden data-chg="mimgup"></label></div></div>
    ${L("Description",`<textarea id="pdesc" rows="3">${esc(p.description)}</textarea>`)}
-   <div id="pdbox"><h3 style="margin-bottom:8px">Discount</h3>
+   <div id="pdbox"><h3 style="margin-bottom:8px">Scheduled / percentage discount <span class="mut" style="font-weight:400">(optional, the discounted price above wins if both are set)</span></h3>
     <label class="tg"><input type="checkbox" id="pden" ${p.discount_value!=null?"checked":""}> Discount enabled</label>
     <div class="r2">${L("Type",`<select id="pdt"><option value="percent" ${p.discount_type!=="fixed"?"selected":""}>Percentage (%)</option><option value="fixed" ${p.discount_type==="fixed"?"selected":""}>Fixed amount (PKR)</option></select>`)}
     ${L("Discount value",`<input id="pdv" type="number" min="0" value="${p.discount_value??""}">`)}</div>
     <div class="r2">${L("Starts (optional)",`<input id="pds" type="datetime-local" value="${p.discount_start?toLocal(p.discount_start):""}">`)}${L("Ends (optional)",`<input id="pde" type="datetime-local" value="${p.discount_end?toLocal(p.discount_end):""}">`)}</div>
     <p id="pcalc" style="margin:4px 0 10px"></p><button class="b d s" data-act="rmdisc" type="button">Remove discount</button></div>
-   ${L("Specifications (one per line, e.g. Material: Leather)",`<textarea id="pspec" rows="3">${esc((p.specs||[]).map(s=>s.k+": "+s.v).join("\n"))}</textarea>`)}
+   <h3 style="margin:8px 0">Product details / specifications <span class="mut" style="font-weight:400">(add, rename or remove any field; empty values are not shown)</span></h3>
+   <div id="specs"></div><div class="mrow"><button class="b o s" type="button" data-act="addspec">+ Add field</button>
+   <select id="spreset" data-chg="specpreset"><option value="">+ Add a common field…</option>${SPEC_PRESETS.map(k=>`<option>${k}</option>`).join("")}</select></div>
    ${L("Product video (URL or upload)",`<div class="cp"><input id="pvid" value="${esc(p.video_url||"")}" placeholder="https://..."><label class="b o s" style="display:grid;place-items:center;white-space:nowrap">Upload<input type="file" accept="video/*" hidden data-chg="pvup"></label></div>`)}
-   <div class="tg"><label><input type="checkbox" id="pact" ${p.active?"checked":""}> Visible on the website</label><label><input type="checkbox" id="pfeat" ${p.featured?"checked":""}> Featured</label></div>
-   <h3 style="margin:8px 0">Colours, stock and photos <span class="mut" style="font-weight:400">(3–4 photos per colour; they also drive the rotate view)</span></h3>
+   <label class="f"><span>Product status</span><select id="pact"><option value="1" ${p.active?"selected":""}>Active (visible on the website)</option><option value="0" ${!p.active?"selected":""}>Inactive (hidden)</option></select></label>
+   <div class="tg"><label><input type="checkbox" id="pfeat" ${p.featured?"checked":""}> Featured</label></div>
+   <h3 style="margin:8px 0">Colours and stock <span class="mut" style="font-weight:400">(add as many colours as you need; each has its own swatch and stock. Total stock: <b id="tstock">0</b>)</span></h3>
    <div id="cols"></div><button class="b o s" data-act="addcol">+ Add colour</button>
    <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="saveprod">Save product</button></div>`,true);
-  drawCols();calcDisc();
+  drawCols();drawSpecs();drawMain();calcDisc();
 }
 CHG.pvup=async t=>{if(!t.files[0])return;toast("Uploading video…");$("#pvid").value=await up(t.files[0],"video");toast("Video uploaded")};
 function drawCols(){
-  $("#cols").innerHTML=S.E.cols.map((c,i)=>`<div class="colb" data-i="${i}"><div class="h"><input data-ci="${i}" data-cf="name" placeholder="Colour name" value="${esc(c.name)}"><input type="color" data-ci="${i}" data-cf="hex" value="${esc(c.hex)}"><input type="number" min="0" data-ci="${i}" data-cf="stock" placeholder="Stock" value="${c.stock}"><button class="b d s" data-act="delcol" data-i="${i}">Remove</button></div>
-   <div class="imgs">${c.images.map((u,j)=>`<div class="im"><img src="${esc(u)}"><button class="m" data-act="imgmain" data-i="${i}" data-j="${j}" title="Make main">★</button><button class="x" data-act="imgdel" data-i="${i}" data-j="${j}">✕</button></div>`).join("")}
-   <label class="addimg">+ Photos<input type="file" accept="image/*" multiple hidden data-chg="imgup" data-i="${i}"></label></div></div>`).join("");
+  $("#cols").innerHTML=S.E.cols.map((c,i)=>`<div class="colb" data-i="${i}"><div class="h"><input data-ci="${i}" data-cf="name" placeholder="Colour name (e.g. Navy Blue)" value="${esc(c.name)}"><input type="color" data-ci="${i}" data-cf="hex" value="${esc(c.hex)}" title="Swatch colour"><input type="number" min="0" data-ci="${i}" data-cf="stock" placeholder="Stock" value="${c.stock}"><button class="b d s" type="button" data-act="delcol" data-i="${i}">Remove</button></div></div>`).join("");
+  const t=$("#tstock");if(t)t.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0);
 }
-$("#mbox").addEventListener("input",e=>{const t=e.target;if(t.dataset.ci!=null){const c=S.E.cols[+t.dataset.ci];c[t.dataset.cf]=t.dataset.cf==="stock"?Math.max(0,parseInt(t.value)||0):t.value}});
+function drawSpecs(){
+  $("#specs").innerHTML=S.E.specs.map((x,i)=>`<div class="specrow"><input data-si="${i}" data-sf="k" placeholder="Field (e.g. Fabric)" value="${esc(x.k)}"><input data-si="${i}" data-sf="v" placeholder="Value" value="${esc(x.v)}"><button class="b d s" type="button" data-act="delspec" data-i="${i}">✕</button></div>`).join("")||'<p class="mut">No fields yet.</p>';
+}
+function drawMain(){$("#mimg").innerHTML=S.E.image?`<div class="im"><img src="${esc(S.E.image)}"><button class="x" type="button" data-act="rmmain">✕</button></div>`:'<div class="mut">No image yet</div>'}
+const SPEC_PRESETS=["Fabric","Material","Fit Type","Style","Sleeve Type","Neck Type","Pattern","Occasion","Season","Care Instructions","Additional Information"];
+ACT.addspec=()=>{S.E.specs.push({k:"",v:""});drawSpecs();const i=$$("#specs .specrow input");i[i.length-2]&&i[i.length-2].focus()};
+ACT.delspec=a=>{S.E.specs.splice(+a.dataset.i,1);drawSpecs()};
+CHG.specpreset=t=>{if(t.value){S.E.specs.push({k:t.value,v:""});drawSpecs();t.value=""}};
+ACT.rmmain=()=>{S.E.image="";drawMain()};
+CHG.mimgup=async t=>{if(!t.files[0])return;toast("Uploading…");S.E.image=await up(t.files[0],"products");drawMain();toast("Image uploaded")};
+$("#mbox").addEventListener("input",e=>{const t=e.target;if(t.dataset.ci!=null){const c=S.E.cols[+t.dataset.ci];c[t.dataset.cf]=t.dataset.cf==="stock"?Math.max(0,parseInt(t.value)||0):t.value;const ts=$("#tstock");if(ts)ts.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0)}
+  if(t.dataset.si!=null)S.E.specs[+t.dataset.si][t.dataset.sf]=t.value;});
 ACT.addcol=()=>{S.E.cols.push({name:"",hex:"#141414",stock:0,images:[]});drawCols()};
 ACT.delcol=a=>{const c=S.E.cols[+a.dataset.i];if(S.E.cols.length<2)throw new Error("A product needs at least one colour");if(c.id)S.E.del.push(c.id);S.E.cols.splice(+a.dataset.i,1);drawCols()};
-ACT.imgdel=a=>{S.E.cols[+a.dataset.i].images.splice(+a.dataset.j,1);drawCols()};
-ACT.imgmain=a=>{const im=S.E.cols[+a.dataset.i].images,[u]=im.splice(+a.dataset.j,1);im.unshift(u);drawCols()};
-CHG.imgup=async t=>{toast("Uploading…");const c=S.E.cols[+t.dataset.i];for(const f of t.files)c.images.push(await up(f,"products"));drawCols();toast("Uploaded")};
 ACT.saveprod=async a=>{
   a.disabled=true;
   try{
     const v=i=>$("#"+i).value,dtp=$("#pden").checked?v("pdt"):"";
-    const row={name:v("pn").trim(),category_id:v("pcat")||null,description:v("pdesc"),price:v("pprice")===""?null:+v("pprice"),
+    const row={name:v("pn").trim(),category_id:v("pcat")||null,description:v("pdesc"),price:v("pprice")===""?null:+v("pprice"),sale_price:v("psale")===""?null:+v("psale"),sku:v("psku").trim()||null,image:S.E.image||null,
       discount_type:dtp||null,discount_value:dtp&&v("pdv")!==""?+v("pdv"):null,discount_start:dtp&&v("pds")?new Date(v("pds")).toISOString():null,discount_end:dtp&&v("pde")?new Date(v("pde")).toISOString():null,
-      featured:$("#pfeat").checked,active:$("#pact").checked,video_url:v("pvid").trim()||null,
-      specs:v("pspec").split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.indexOf(":");return i<0?{k:l,v:""}:{k:l.slice(0,i).trim(),v:l.slice(i+1).trim()}})};
+      featured:$("#pfeat").checked,active:v("pact")==="1",video_url:v("pvid").trim()||null,
+      specs:S.E.specs.map(x=>({k:x.k.trim(),v:x.v.trim()})).filter(x=>x.k&&x.v)};
     if(!row.name)throw new Error("Product name is required");
+    if(row.sale_price!=null){if(row.price==null)throw new Error("Enter the product price before a discounted price");if(!(row.sale_price<row.price))throw new Error("The discounted price must be lower than the product price")}
     if(dtp){if(row.price==null)throw new Error("Enter the original price before adding a discount");const dv=row.discount_value;
       if(!(dv>0))throw new Error("Enter a discount value above zero, or switch the discount off");
       if(dtp==="percent"&&dv>99)throw new Error("A percentage discount must be between 1 and 99");
@@ -269,7 +299,7 @@ ACT.saveprod=async a=>{
     else{const r=await sb.from("products").insert(row).select("id").single();if(r.error)throw r.error;id=r.data.id}
     if(S.E.del.length){const r=await sb.from("product_colours").delete().in("id",S.E.del);if(r.error)throw r.error}
     const upd=[],ins=[];
-    S.E.cols.forEach((c,i)=>{const r={name:c.name.trim()||"Colour "+(i+1),hex:c.hex,stock:Math.max(0,parseInt(c.stock)||0),images:c.images,sort:i,product_id:id};c.id?upd.push({...r,id:c.id}):ins.push(r)});
+    S.E.cols.forEach((c,i)=>{const r={name:c.name.trim()||"Colour "+(i+1),hex:c.hex,stock:Math.max(0,parseInt(c.stock)||0),images:[],sort:i,product_id:id};c.id?upd.push({...r,id:c.id}):ins.push(r)});
     if(upd.length){const r=await sb.from("product_colours").upsert(upd);if(r.error)throw r.error}
     if(ins.length){const r=await sb.from("product_colours").insert(ins);if(r.error)throw r.error}
     closeModal();toast("Product saved. It is live on the website.");V.products();
@@ -296,7 +326,7 @@ ACT.stkset=a=>setStock(a.dataset.id,Math.max(0,parseInt($("#sd-"+a.dataset.id).v
 /* ---------------- categories ---------------- */
 V.categories=async()=>{
   const r=await sb.from("categories").select("*").order("sort");if(r.error)throw r.error;S.cats=r.data;
-  $("#view").innerHTML=`<div class="bar"><button class="b" data-act="newcat">+ Add category</button></div><div class="tw"><table><tr><th></th><th>Name</th><th>Order</th><th>Visible</th><th></th></tr>${r.data.map(c=>`<tr><td>${c.image?`<img class="th" src="${esc(c.image)}">`:'<div class="th"></div>'}</td><td><b>${esc(c.name)}</b><br><span class="mut">${esc(c.slug)}</span></td><td>${c.sort}</td><td>${c.active?"Yes":"Hidden"}</td><td><button class="b o s" data-act="editcat" data-id="${c.id}">Edit</button> <button class="b d s" data-act="delcat" data-id="${c.id}">Delete</button></td></tr>`).join("")}</table></div>`;
+  $("#view").innerHTML=walletSwitch()+`<div class="bar"><button class="b" data-act="newcat">+ Add category</button></div><div class="tw"><table><tr><th></th><th>Name</th><th>Order</th><th>Visible</th><th></th></tr>${r.data.map(c=>`<tr><td>${c.image?`<img class="th" src="${esc(c.image)}">`:'<div class="th"></div>'}</td><td><b>${esc(c.name)}</b><br><span class="mut">${esc(c.slug)}</span></td><td>${c.sort}</td><td>${c.active?"Yes":"Hidden"}</td><td><button class="b o s" data-act="editcat" data-id="${c.id}">Edit</button> <button class="b d s" data-act="delcat" data-id="${c.id}">Delete</button></td></tr>`).join("")}</table></div>`;
 };
 ACT.newcat=()=>catForm(null);ACT.editcat=a=>catForm(a.dataset.id);
 function catForm(id){
@@ -395,9 +425,9 @@ V.site=async()=>{
 CHG.grp=t=>{S.grp=t.value;drawGroup();pvScroll()};
 ACT.pvd=()=>$("#pvw").classList.remove("m");ACT.pvm=()=>$("#pvw").classList.add("m");
 function pv(){clearTimeout(pv.t);pv.t=setTimeout(()=>{const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasPreview:JSON.parse(JSON.stringify(S.draft))},"*")},120)}
-const SCR={hero:"#top",layers:"#top",motion:"#top",ticker:".ticker",sections:"#wallets",sale:"#sale",banner:"#banner",about:"#about",contact:"footer",policies:"footer",footer:"footer",delivery:"#wallets",colours:"",seccolors:"",sizes:"",type:"",brand:"",announcement:"",text:""};
+const SCR={hero:"#top",layers:"#top",motion:"#top",ticker:".ticker",sections:"#shop",sale:"#sale",banner:"#banner",about:"#about",contact:"footer",policies:"footer",footer:"footer",delivery:"#shop",colours:"",seccolors:"",sizes:"",type:"",brand:"",announcement:"",text:""};
 function pvScroll(){const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasScroll:SCR[S.grp]||""},"*")}
-const SECN={ticker:"Moving text band",sale:"Sale strip",banner:"Motion banner",wallets:"Products",about:"About"};
+const SECN={ticker:"Moving text band",sale:"Sale strip",banner:"Motion banner",shop:"Products",about:"About"};
 const isVid=u=>/\.(mp4|webm|mov)(\?|$)/i.test(u||"");
 function drawGroup(){
   const g=RAAS_SCHEMA.find(x=>x.id===S.grp);$("#sform").innerHTML=`<h3>${g.title}</h3>`+g.fields.map(fld).join("");pv();
@@ -467,7 +497,7 @@ ACT.chpw=async()=>{const a=$("#np").value;if(a.length<8)throw new Error("Use at 
 
 /* ======================================================================
    NEW: Visual Editor (live preview, per-element fonts, colours, branding),
-        360° Wallet Display, draft / publish, undo / redo, discount tools
+        Hero Display, draft / publish, undo / redo, discount tools
    ====================================================================== */
 const cl=o=>JSON.parse(JSON.stringify(o));
 const setPE=(o,k,v)=>{const p=k.split(".");let a=o;while(p.length>1){const x=p.shift();if(a[x]==null||typeof a[x]!=="object")a[x]={};a=a[x]}a[p[0]]=v};
@@ -504,7 +534,7 @@ function edShell(){
      <button class="b o s" data-act="edsave">Save draft</button><button class="b s" data-act="edpub">Publish</button><button class="b d s" data-act="edresetall">Reset all to default</button></div>
      <div id="edstat" style="font-size:12px;margin-top:8px"></div>
      ${S.hasDraft?`<div class="mut" style="font-size:12px;margin-top:4px">A saved (unpublished) draft was loaded. <a href="#" data-act="eddrop">Discard draft and load the live version</a></div>`:""}</div>
-   <div class="tabs">${[["text","Text & fonts"],["colours","Colours"],["brand","Branding"],["wallet","360° Wallet"]].map(t=>`<button class="b o s" data-act="etab" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>
+   <div class="tabs">${[["text","Text & fonts"],["colours","Colours"],["brand","Branding"],["wallet","Hero media"]].map(t=>`<button class="b o s" data-act="etab" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>
    <div class="panel" id="ed"></div></div>
    <div class="pvw" id="pvw"><div class="bar" style="padding:8px;margin:0;align-items:center">
      ${["desktop","tablet","mobile"].map(d=>`<button class="b o s" data-act="dev" data-d="${d}">${d[0].toUpperCase()+d.slice(1)}</button>`).join("")}
@@ -592,14 +622,14 @@ function tabBrand(){return `<h3>Name, logo and branding</h3><p class="mut" style
 ACT.brandreset=()=>{S.draft.brand=cl(RAAS_DEFAULTS.brand);S.draft.ext.brand=cl(RAAS_EXT_DEFAULTS.brand);edDraw();touch();commit()};
 /* ---- tab: 360 wallet ---- */
 function tabWallet(){
-  const h=S.draft.hero,w=S.draft.ext.wallet,lv=S.live.hero.video,st=!h.video?"No wallet video uploaded":(h.video===lv&&sameJ(S.live.ext.wallet,w)?"Live on the website":"Not published yet – press Publish");
-  return `<h3>360° Wallet Display / Hero Wallet Media</h3>
-  <p class="mut" style="margin-bottom:10px">Upload the rotating video of your actual wallet. After <b>Publish</b> it replaces the picture in the homepage hero and loops continuously.</p>
-  ${eTog("Show the 360° wallet animation on the homepage","ext.wallet.enabled")}
-  <div class="f"><span>Wallet video (MP4 or WebM, max 50 MB) – <b>${st}</b></span>
+  const h=S.draft.hero,w=S.draft.ext.wallet,lv=S.live.hero.video,st=!h.video?"No hero video uploaded":(h.video===lv&&sameJ(S.live.ext.wallet,w)?"Live on the website":"Not published yet – press Publish");
+  return `<h3>Hero Display / Hero Media</h3>
+  <p class="mut" style="margin-bottom:10px">Upload a video of your clothing (model or product). After <b>Publish</b> it replaces the picture in the homepage hero and loops continuously.</p>
+  ${eTog("Show the hero video on the homepage","ext.wallet.enabled")}
+  <div class="f"><span>Hero video (MP4 or WebM, max 50 MB) – <b>${st}</b></span>
    ${h.video?`<video id="wprev" src="${esc(h.video)}" muted controls playsinline autoplay loop style="width:100%;max-height:230px;border-radius:6px;background:repeating-conic-gradient(#d9d9d9 0 25%,#fff 0 50%) 0 0/18px 18px"></video>
    <div id="wstat" class="wstat">${wStatHTML(h.video)}</div><div class="mut" style="font-size:12px;word-break:break-all">${esc(h.video)}</div>`:`<div class="mut" style="padding:20px;border:1px dashed #aaa;text-align:center">No video yet. The current image / built-in wallet is shown.</div>`}
-   <div class="mrow"><label class="b s" id="wvbtn">${h.video?"Replace video":"Upload 360° video"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.video"></label>
+   <div class="mrow"><label class="b s" id="wvbtn">${h.video?"Replace video":"Upload hero video"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.video"></label>
    ${h.video?`<button class="b d s" data-act="emdel" data-k="hero.video">Delete video</button>`:""}</div></div>
   <h3 style="margin:14px 0 8px">Transparent background</h3>
   ${eSel("Background removal","ext.wallet.bgMode",[["auto","Automatic (recommended)"],["key","Always remove the solid background colour"],["none","Off – show the video exactly as uploaded"]])}
@@ -611,7 +641,7 @@ function tabWallet(){
   <h3 style="margin:14px 0 8px">Playback</h3>
   ${eTog("Autoplay","ext.wallet.autoplay")}${eTog("Loop continuously","ext.wallet.loop")}${eRng("Playback speed (1 = normal)","ext.wallet.speed",.25,2,.05)}
   <h3 style="margin:14px 0 8px">Fallback &amp; phones</h3>
-  ${eMed("Fallback wallet image (shown if the animation is off or the video cannot load)","hero.image","image","hero-wallet")}
+  ${eMed("Fallback hero image (shown if the animation is off or the video cannot load)","hero.image","image","hero-wallet")}
   <div class="f"><span>Lighter video for phones (optional)</span>${h.videoMobile?`<video src="${esc(h.videoMobile)}" muted controls playsinline style="height:80px;background:#000"></video>`:""}<div class="mrow"><label class="b o s">${h.videoMobile?"Replace":"Upload"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.videoMobile"></label>${h.videoMobile?`<button class="b d s" data-act="emdel" data-k="hero.videoMobile">Delete</button>`:""}</div></div>
   <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="wreset">Reset playback settings</button></div>
   <p class="mut" style="font-size:12px;margin-top:8px">The preview on the right shows the uploaded video straight away, before it goes live. Use “Save draft” to keep it for later or “Publish” to put it on the live website.</p>`}
@@ -622,9 +652,9 @@ function wStatHTML(u){const r=S.wInfo[u];
   return wMsg(r)}
 function wMsg(r){const M={
   checking:["#6b7280","Checking the video background…"],
-  alpha:["#047857","✓ Real transparent video (alpha channel). Only the wallet is shown on the website. For iPhone / Safari also upload the HEVC copy below, or the background is removed automatically there."],
+  alpha:["#047857","✓ Real transparent video (alpha channel). Only the product is shown on the website. For iPhone / Safari also upload the HEVC copy below, or the background is removed automatically there."],
   solid:["#b45309",`This file has no transparency – it has a solid ${r.hex?`<span style="display:inline-block;width:11px;height:11px;border:1px solid #999;vertical-align:-1px;background:${r.hex}"></span> ${r.hex}`:""} background (normal for MP4). The website removes this background automatically and shows only the wallet. For the cleanest edges export a WebM with alpha.`],
-  scene:["#b91c1c","This video has no transparency and its background is not one plain colour, so it cannot be removed cleanly. Please export the wallet with a transparent background (WebM VP9 with alpha) or on one plain colour."],
+  scene:["#b91c1c","This video has no transparency and its background is not one plain colour, so it cannot be removed cleanly. Please export the video with a transparent background (WebM VP9 with alpha) or on one plain colour."],
   blocked:["#b45309","The video could not be inspected here (storage blocked pixel access). It will still play."],
   error:["#b91c1c","This video could not be read by the browser."],unknown:["#6b7280","Could not check the video in time."]}[r.kind]||["#6b7280",""];
   return `<p style="font-size:12.5px;margin:6px 0;color:${M[0]}">${M[1]}</p>`}
@@ -679,7 +709,7 @@ addEventListener("message",e=>{
       const co=ed.querySelector(`input[type=color][data-ek="${P}color"]`);if(co&&!getP(S.draft,P+"color")&&toHex(i.color))co.value=toHex(i.color)}}
 });
 /* ---- save draft / publish / reset ---- */
-function checkDraft(){const h=S.draft.hero;if(h.video&&!/^https?:\/\//i.test(h.video))throw new Error("The wallet video link is not valid.");
+function checkDraft(){const h=S.draft.hero;if(h.video&&!/^https?:\/\//i.test(h.video))throw new Error("The hero video link is not valid.");
   const sp=+S.draft.ext.wallet.speed;if(!(sp>=.1&&sp<=4))throw new Error("Playback speed must be between 0.1 and 4.");}
 ACT.edsave=async a=>{clearTimeout(ct);commit();a.disabled=true;try{checkDraft();const r=await sb.from("site_config").upsert({id:"draft",data:S.draft,updated_at:new Date().toISOString()});if(r.error)throw r.error;S.hasDraft=true;toast("Draft saved. It is NOT live yet.")}finally{a.disabled=false}};
 async function cleanTrash(){
@@ -692,7 +722,7 @@ ACT.edpub=async a=>{clearTimeout(ct);commit();a.disabled=true;
     await sb.from("site_config").delete().eq("id","draft");await cleanTrash();
     S.live=cl(S.draft);S.hasDraft=false;S.trash=new Set();histReset();histBtns();edDraw();edStat();toast("Published. The live website is updated for every visitor.")}
   finally{a.disabled=false}};
-ACT.edresetall=()=>{if(!confirm("Reset EVERYTHING in the editor (texts, fonts, colours, branding, wallet video) to the original RAAS defaults?\n\nNothing changes on the live site until you press Publish. You can still Undo."))return;
+ACT.edresetall=()=>{if(!confirm("Reset EVERYTHING in the editor (texts, fonts, colours, branding, hero video) to the original RAAS defaults?\n\nNothing changes on the live site until you press Publish. You can still Undo."))return;
   [S.draft.hero.video,S.draft.hero.videoMobile,S.draft.hero.image,S.draft.brand.logoUrl,S.draft.brand.footerLogoUrl,S.draft.ext.brand.favicon].forEach(trashOld);
   S.draft=normDraft(RAAS_merge(RAAS_DEFAULTS,{}));edDraw();touch();commit()};
 

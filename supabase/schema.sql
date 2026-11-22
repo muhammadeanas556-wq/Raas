@@ -21,7 +21,8 @@ create table if not exists products(
   discount_type text check (discount_type in ('percent','fixed')), discount_value numeric,
   discount_start timestamptz, discount_end timestamptz,
   featured boolean default false, active boolean default true,
-  video_url text, specs jsonb default '[]', sort int default 0, created_at timestamptz default now());
+  video_url text, specs jsonb default '[]', sort int default 0, created_at timestamptz default now(),
+  image text, sku text, sale_price numeric check (sale_price is null or sale_price>=0));
 create table if not exists product_colours(
   id uuid primary key default gen_random_uuid(), product_id uuid not null references products(id) on delete cascade,
   name text not null, hex text default '#141414', stock int not null default 0 check (stock>=0),
@@ -96,12 +97,13 @@ begin
     if not found or prod.price is null then raise exception 'An item is no longer available'; end if;
     if col.stock<q then raise exception '% (%) is out of stock', prod.name, col.name; end if;
     unit:=prod.price;
-    if prod.discount_value is not null and (prod.discount_start is null or prod.discount_start<=now()) and (prod.discount_end is null or prod.discount_end>now()) then
+    if prod.sale_price is not null and prod.sale_price<prod.price then unit:=prod.sale_price;
+    elsif prod.discount_value is not null and (prod.discount_start is null or prod.discount_start<=now()) and (prod.discount_end is null or prod.discount_end>now()) then
       unit:=case when prod.discount_type='percent' then round(prod.price*(1-prod.discount_value/100)) else greatest(0,prod.price-prod.discount_value) end;
     elsif sale_pct>0 then unit:=round(prod.price*(1-sale_pct/100)); end if;
     update product_colours set stock=stock-q where id=col.id;
     sub:=sub+unit*q;
-    lines:=lines||jsonb_build_object('product_id',prod.id,'colour_id',col.id,'name',prod.name,'colour',col.name,'qty',q,'unit',unit,'image',col.images[1]);
+    lines:=lines||jsonb_build_object('product_id',prod.id,'colour_id',col.id,'name',prod.name,'colour',col.name,'qty',q,'unit',unit,'image',coalesce(prod.image,col.images[1]));
   end loop;
   if coalesce(payload->>'coupon','')<>'' then
     select * into cp from coupons where upper(code)=upper(payload->>'coupon') and active and (starts_at is null or starts_at<=now())
@@ -147,7 +149,7 @@ create policy media_admin_write on storage.objects for all to authenticated
   using (bucket_id='media' and is_admin()) with check (bucket_id='media' and is_admin());
 
 insert into site_config(id,data) values('main','{}') on conflict (id) do nothing;
-insert into categories(slug,name,sort) values ('bifold','Bifold Wallets',1),('slim','Slim Wallets',2),('card','Card Holders',3),('long','Long Wallets',4)
+insert into categories(slug,name,sort,active) values ('clothing','Clothing',1,true),('wallets','Wallets',2,false)
   on conflict (slug) do nothing;
 
 -- After creating your admin user in Supabase > Authentication > Users, run (with your email):

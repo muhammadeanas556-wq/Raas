@@ -4,30 +4,30 @@
 (function(){
 const D={
   /* the 4 simple website colours + fonts. Defaults follow the black & warm-gold reference design. */
-  look:{bg:"#0b0b0a",section:"#141412",text:"#f6f4ef",accent:"#f7d98b",headFont:"Plus Jakarta Sans",bodyFont:"Inter",radius:14},
+  look:{bg:"#0c0c0c",section:"#161616",text:"#f4f1ea",accent:"#d8c9ae",headFont:"Urbanist",bodyFont:"Inter",radius:14},
   brand:{name:"RAAS",logoUrl:"",logoHeight:30,footerLogoUrl:"",footerLogoHeight:26},
   theme:{primary:"#000000",secondary:"#ffffff",bg:"#ffffff",text:"#0a0a0a",btn:"#000000",btnText:"#ffffff",header:"#ffffff",footer:"#000000",accent:"#000000",
          headFont:"Cormorant Garamond",bodyFont:"Inter",headSize:100,bodySize:15,radius:0,spacing:100,columns:4},
-  announcement:{enabled:true,items:["Cash on Delivery across Pakistan","Carry your identity"]},
-  hero:{title:"Carry Your Identity, *Crafted for Every Day*",desc:"Designed for everyday essentials. Crafted with attention to detail.",btnText:"Explore Collection",btnLink:"#wallets",
-        btn2Text:"Our Story",btn2Link:"#about",stats:["COD|Cash on delivery","Nationwide|Delivery across Pakistan","Premium|Everyday essentials"],
+  announcement:{enabled:true,items:["Cash on Delivery across Pakistan","New season arrivals"]},
+  hero:{title:"Wear Your *Identity*",desc:"Modern clothing, made with premium fabrics and a considered fit. Designed for everyday life.",btnText:"Shop Collection",btnLink:"#shop",
+        btn2Text:"Our Story",btn2Link:"#about",stats:["COD|Cash on delivery","Nationwide|Delivery across Pakistan","Premium|Quality fabrics"],
         mediaType:"3d",image:"",imageMobile:"",video:"",videoMobile:"",poster:"",views:[],viewInterval:4800,sampleText:"RAAS",bgVideo:"",bgImage:"",bgOpacity:40,layers:[]},
   motion:{loader:true,loaderText:"RAAS",loaderImage:"",loaderMs:1200,reveal:true,mask:true,cardReveal:true,cursor:true,magnetic:true,shine:true,float:true,parallax:true,glow:true,ticker:true,speed:1},
-  ticker:{words:["Bifold","Slim","Card Holders","Long","Everyday Essentials"]},
-  sections:[{id:"ticker",show:true},{id:"sale",show:true},{id:"banner",show:false},{id:"wallets",show:true},{id:"about",show:true}],
-  banner:{media:"",poster:"",height:60,overlay:40,title:"",text:"",btnText:"",btnLink:"#wallets",textColor:"#ffffff"},
+  ticker:{words:["New Arrivals","T-Shirts","Hoodies","Shirts","Everyday Essentials"]},
+  sections:[{id:"ticker",show:true},{id:"sale",show:true},{id:"banner",show:false},{id:"shop",show:true},{id:"about",show:true}],
+  banner:{media:"",poster:"",height:60,overlay:40,title:"",text:"",btnText:"",btnLink:"#shop",textColor:"#ffffff"},
   secColors:{headText:"#0a0a0a",annBg:"#000000",annText:"#ffffff",heroBg:"#000000",heroText:"#ffffff",tickBg:"#ffffff",tickText:"#0a0a0a",saleBg:"#f4f4f4",saleText:"#0a0a0a",shopBg:"#ffffff",shopText:"#0a0a0a",aboutBg:"#f4f4f4",aboutText:"#0a0a0a",footText:"#ffffff",pdpBg:"#ffffff"},
   sizes:{heroTitle:100,heroDesc:100,sectionTitle:100,nav:100,button:100,announce:100,ticker:100,cardName:100,cardPrice:100,pdpTitle:100,pdpPrice:100,about:100,footer:100},
   sale:{enabled:false,label:"Sale",percent:10,endsAt:""},
-  about:{text:"RAAS represents simplicity, confidence, and timeless everyday essentials. Our focus is on creating wallets that combine practical design with a refined aesthetic."},
+  about:{text:"RAAS represents simplicity, confidence and timeless everyday style. We create clothing that combines comfortable fabrics, a considered fit and a refined, modern aesthetic."},
   contact:{email:"",phone:"",whatsapp:"",instagram:"",facebook:"",tiktok:"",youtube:"",address:""},
   delivery:{charge:"",freeAbove:"",info:"Cash on Delivery across Pakistan. Delivery charges are shown at checkout."},
   policies:{privacy:"",returns:""},
-  footer:{about:"Premium wallets and everyday accessories."},
-  text:{navHome:"HOME",navWallets:"ALL WALLETS",navAbout:"ABOUT US",navContact:"CONTACT",search:"SEARCH",searchPlaceholder:"Search wallets",cart:"CART",menu:"MENU",
-    collectionTitle:"All Wallets",sortNew:"Newest",sortLo:"Price: low to high",sortHi:"Price: high to low",availAll:"All availability",availIn:"In stock",
-    aboutTitle:"About RAAS",shopSale:"SHOP THE SALE",featured:"FEATURED",soldOut:"SOLD OUT",dragHint:"DRAG TO ROTATE",inStock:"In stock",outStock:"Out of stock",
-    colour:"COLOUR",addToCart:"ADD TO CART",buyNow:"BUY NOW",deliveryTitle:"DELIVERY",specsTitle:"SPECIFICATIONS",offerEnds:"Offer ends in",autoRotate:"AUTO ROTATE",zoom:"ZOOM",
+  footer:{about:"Modern clothing for everyday life."},
+  text:{navHome:"HOME",navShop:"SHOP",navAbout:"ABOUT US",navContact:"CONTACT",search:"SEARCH",searchPlaceholder:"Search clothing",cart:"CART",menu:"MENU",
+    collectionTitle:"All Products",emptyShop:"No products here yet.",sizes:"Sizes",fitDetails:"PRODUCT DETAILS",sortNew:"Newest",sortLo:"Price: low to high",sortHi:"Price: high to low",availAll:"All availability",availIn:"In stock",
+    aboutTitle:"About RAAS",shopSale:"SHOP THE SALE",featured:"FEATURED",soldOut:"SOLD OUT",inStock:"In stock",outStock:"Out of stock",
+    colour:"COLOUR",addToCart:"ADD TO CART",buyNow:"BUY NOW",deliveryTitle:"DELIVERY",specsTitle:"PRODUCT DETAILS",offerEnds:"Offer ends in",zoom:"ZOOM",
     closeBtn:"CLOSE ✕",yourCart:"YOUR CART",emptyCart:"Your cart is empty.",remove:"Remove",subtotal:"Subtotal",delivery:"Delivery",total:"Total",
     atCheckout:"Set at checkout",free:"Free",checkout:"CHECKOUT",placeOrder:"PLACE ORDER",fullName:"Full name",phone:"Phone number (03XX XXXXXXX)",address:"Complete address",city:"City",
     coupon:"Discount code (optional)",cod:"Cash on Delivery",couponNote:"The discount code is checked when you place the order.",
@@ -60,22 +60,22 @@ const S=[
   {k:"look.radius",l:"Corner roundness (px)",t:"range",min:0,max:24,step:1},{k:"theme.spacing",l:"Section spacing (%)",t:"range",min:50,max:160,step:5},
   {k:"theme.columns",l:"Products per row (desktop)",t:"select",opts:[3,4]}]},
  {id:"announcement",title:"Announcement bar",fields:[{k:"announcement.enabled",l:"Show the bar",t:"toggle"},{k:"announcement.items",l:"Messages (one per line)",t:"list"}]},
- {id:"hero",title:"Hero (wallet animation)",fields:[
+ {id:"hero",title:"Hero",fields:[
   {k:"hero.title",l:"Headline (put *stars* around words to show them in light italic)",t:"text"},{k:"hero.desc",l:"Description",t:"textarea"},{k:"hero.btnText",l:"Button text",t:"text"},{k:"hero.btnLink",l:"Button link",t:"text"},
   {k:"hero.btn2Text",l:"Second button text (empty = hidden)",t:"text"},{k:"hero.btn2Link",l:"Second button link",t:"text"},
   {k:"hero.stats",l:"Highlights under the buttons, one per line: big text|small text (empty = hidden)",t:"list"},
-  {k:"hero.mediaType",l:"Wallet media (3d = built-in sample wallet)",t:"select",opts:["3d","image","video"]},
-  {k:"hero.sampleText",l:"Text on the sample wallet",t:"text"},
-  {k:"hero.image",l:"Wallet image (PNG/WebP, transparent best)",t:"image"},{k:"hero.imageMobile",l:"Wallet image for phones (optional)",t:"image"},
-  {k:"hero.video",l:"Wallet video (MP4/WebM)",t:"video"},{k:"hero.videoMobile",l:"Wallet video for phones (optional)",t:"video"},{k:"hero.poster",l:"Video poster image (optional)",t:"image"},
-  {k:"hero.views",l:"Extra views (back, inside...): hero cycles through them",t:"views"},{k:"hero.viewInterval",l:"Time per view (ms)",t:"range",min:2000,max:10000,step:200}]},
+  {k:"hero.mediaType",l:"Hero media (3d = built-in sample garment)",t:"select",opts:["3d","image","video"]},
+  {k:"hero.sampleText",l:"Text on the sample garment",t:"text"},
+  {k:"hero.image",l:"Hero image (PNG/WebP, transparent best)",t:"image"},{k:"hero.imageMobile",l:"Hero image for phones (optional)",t:"image"},
+  {k:"hero.video",l:"Hero video (MP4/WebM)",t:"video"},{k:"hero.videoMobile",l:"Hero video for phones (optional)",t:"video"},{k:"hero.poster",l:"Video poster image (optional)",t:"image"},
+  {k:"hero.views",l:"Extra views (back, detail...): hero fades through them",t:"views"},{k:"hero.viewInterval",l:"Time per view (ms)",t:"range",min:2000,max:10000,step:200}]},
  {id:"layers",title:"Extra motion graphics (add your own)",fields:[
   {k:"hero.bgVideo",l:"Hero background video (loops behind everything)",t:"video"},{k:"hero.bgImage",l:"Hero background image (used if no video)",t:"image"},{k:"hero.bgOpacity",l:"Background strength (%)",t:"range",min:0,max:100,step:5},
   {k:"hero.layers",l:"Floating layers: any image, GIF, WebP or video placed on the hero",t:"layers"}]},
  {id:"motion",title:"Motion graphics",fields:[
   tg("loader","Opening curtain with brand name"),{k:"motion.loaderText",l:"Curtain text",t:"text"},{k:"motion.loaderImage",l:"Curtain logo/image instead of text (optional)",t:"image"},{k:"motion.loaderMs",l:"Curtain duration (ms)",t:"range",min:300,max:4000,step:100},
   tg("reveal","Scroll reveal of blocks"),tg("mask","Headline mask reveal"),tg("cardReveal","Product image reveal"),tg("cursor","Custom cursor (desktop)"),tg("magnetic","Magnetic buttons"),
-  tg("shine","Button shine sweep"),tg("float","Floating wallet"),tg("parallax","Pointer and scroll depth"),tg("glow","Soft ambient light in the hero background"),tg("ticker","Moving text bands"),
+  tg("shine","Button shine sweep"),tg("float","Gentle floating of the hero image"),tg("parallax","Pointer and scroll depth"),tg("glow","Soft ambient light in the hero background"),tg("ticker","Moving text bands"),
   {k:"motion.speed",l:"Overall speed (1 = normal, 2 = twice as fast)",t:"range",min:.5,max:2,step:.1}]},
  {id:"banner",title:"Motion banner (turn on in Homepage sections)",fields:[
   {k:"banner.media",l:"Banner video or image",t:"media"},{k:"banner.poster",l:"Video poster (optional)",t:"image"},{k:"banner.height",l:"Height (% of screen)",t:"range",min:30,max:100,step:5},{k:"banner.overlay",l:"Dark overlay (%)",t:"range",min:0,max:90,step:5},
@@ -91,5 +91,5 @@ const S=[
  {id:"text",title:"All website texts",fields:Object.keys(D.text).map(k=>({k:"text."+k,l:k.replace(/([A-Z])/g," $1").toLowerCase(),t:"text"}))}
 ];
 window.RAAS_DEFAULTS=D;window.RAAS_SCHEMA=S;
-window.RAAS_merge=(a,b)=>{const o=merge(a,b);if(a===D&&o.sections)D.sections.forEach(d=>{if(!o.sections.some(x=>x.id===d.id))o.sections.push({...d})});return o};
+window.RAAS_merge=(a,b)=>{if(b&&Array.isArray(b.sections))b={...b,sections:b.sections.map(x=>x&&x.id==="wallets"?{...x,id:"shop"}:x)};const o=merge(a,b);if(a===D&&o.sections)D.sections.forEach(d=>{if(!o.sections.some(x=>x.id===d.id))o.sections.push({...d})});return o};
 })();

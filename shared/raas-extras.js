@@ -12,7 +12,7 @@ const EL=[
  {id:"announce",g:"Header",l:"Announcement bar",sel:".announce",text:"announcement.items",kind:"list"},
  {id:"logo",g:"Header",l:"Header logo / brand name",sel:"#logo",text:"brand.name",kind:"text"},
  {id:"navHome",g:"Header",l:"Menu: Home",sel:"nav a[data-t=navHome]",text:"text.navHome",kind:"text"},
- {id:"navWallets",g:"Header",l:"Menu: All wallets",sel:"nav a[data-t=navWallets]",text:"text.navWallets",kind:"text"},
+ {id:"navShop",g:"Header",l:"Menu: Shop",sel:"nav a[data-t=navShop]",text:"text.navShop",kind:"text"},
  {id:"navAbout",g:"Header",l:"Menu: About us",sel:"nav a[data-t=navAbout]",text:"text.navAbout",kind:"text"},
  {id:"navContact",g:"Header",l:"Menu: Contact",sel:"nav a[data-t=navContact]",text:"text.navContact",kind:"text"},
  {id:"search",g:"Header",l:"Search button",sel:"#sbtn",text:"text.search",kind:"text"},
@@ -24,7 +24,7 @@ const EL=[
  {id:"saleTitle",g:"Homepage",l:"Sale strip heading",sel:".sale h3",text:"sale.label",kind:"text"},
  {id:"bannerTitle",g:"Homepage",l:"Motion banner heading",sel:".btxt h2",text:"banner.title",kind:"text"},
  {id:"bannerText",g:"Homepage",l:"Motion banner text",sel:".btxt p",text:"banner.text",kind:"textarea"},
- {id:"collTitle",g:"Products",l:"Products section heading",sel:"#wallets .head h2",text:"text.collectionTitle",kind:"text"},
+ {id:"collTitle",g:"Products",l:"Products section heading",sel:"#shop .head h2",text:"text.collectionTitle",kind:"text"},
  {id:"cardName",g:"Products",l:"Product name (cards)",sel:".pc h3",text:null,note:"Product names are edited under Products."},
  {id:"cardCat",g:"Products",l:"Product category (cards)",sel:".pc .cat",text:null,note:"Categories are edited under Categories."},
  {id:"cardPrice",g:"Products",l:"Product price (cards)",sel:".pc .pr",text:null,note:"Prices are edited under Products."},
@@ -41,7 +41,7 @@ const EL=[
  {id:"btn",g:"Buttons",l:"All buttons (every button on the site)",sel:".btn",text:null,note:"Applies to every button. The hero button can also be styled on its own."}
 ];
 /* order used when the visitor clicks inside the preview: most specific first */
-const PICK_ORDER=["heroBtn","navHome","navWallets","navAbout","navContact","search","cart","logo","heroTitle","heroDesc","saleTitle","bannerTitle","bannerText","collTitle","cardName","cardCat","cardPrice","pdpTitle","pdpPrice","pdpDesc","aboutTitle","aboutText","contactInfo","footAbout","footHead","footLinks","copyright","ticker","announce","btn"];
+const PICK_ORDER=["heroBtn","navHome","navShop","navAbout","navContact","search","cart","logo","heroTitle","heroDesc","saleTitle","bannerTitle","bannerText","collTitle","cardName","cardCat","cardPrice","pdpTitle","pdpPrice","pdpDesc","aboutTitle","aboutText","contactInfo","footAbout","footHead","footLinks","copyright","ticker","announce","btn"];
 
 const EXT_DEFAULTS={
   /* bgMode: auto = detect transparency / solid background automatically, none = show the file exactly as it is,
@@ -309,7 +309,7 @@ function applyExt(){
   st.textContent=genCSS(x);
   loadFamilies(fontsUsed(x));
   const n=(CFG.brand&&CFG.brand.name)||"RAAS",b=x.brand;
-  document.title=n+" \u2014 "+(b.tagline||"Premium Wallets");
+  document.title=n+" \u2014 "+(b.tagline||"Modern Clothing");
   setHead('link[rel~="icon"]',()=>{const l=document.createElement("link");l.rel="icon";return l},"href",b.favicon);
   const desc=b.description||(CFG.footer&&CFG.footer.about)||"";
   let md=document.head.querySelector('meta[name="description"]');if(md&&desc)md.setAttribute("content",desc);

@@ -1,0 +1,17 @@
+RAAS -> CLOTHING BRAND UPDATE
+
+1. Supabase > SQL Editor: paste and run  supabase/migration-clothing.sql  (once; safe to repeat).
+   - adds product fields (main image, SKU, discounted price)
+   - creates categories Clothing (visible) and Wallets (hidden, empty)
+   - moves all existing products to Clothing, keeps orders/admins/colours
+   - clears saved wallet wording + old colours so the new clothing defaults apply
+     (logo, contact, delivery, policies, sale settings are kept)
+2. Replace these files in your repo: index.html, admin/index.html, shared/config.js, shared/raas-extras.js
+   (supabase/schema.sql is updated for fresh installs only.)
+3. Hard refresh (Ctrl+F5). Admin > Website > Publish once.
+
+Admin:
+ - Products / Categories pages: "Wallets section on the website" ON/OFF switch.
+ - Add/Edit product: name, description, category, price, discounted price, SKU, status,
+   ONE main image, flexible specification fields (add / rename / remove, presets for fabric, fit...),
+   colours (name + swatch + stock, add/remove freely).
