@@ -725,13 +725,17 @@ $("#pbody").addEventListener("click",e=>{
     $$("#pbody .szg button").forEach(b=>{const on=b.dataset.size===selSize;b.classList.toggle("on",on);b.setAttribute("aria-checked",on)});
     $("#szname").textContent=sizeName(selSize);$("#szbox").classList.remove("need")}
   if(e.target.closest("#add")){if(addToCart())openCart()}
-  if(e.target.closest("#buy")){if(addToCart()){closeProduct();openCart(true)}}
+  if(e.target.closest("#buy")){if(addToCart(true)){closeProduct();openCart(true)}}
 });
 
 /* ---------- cart + checkout (cart is browser-only; orders need the backend) ---------- */
 let cart=[]; try{cart=JSON.parse(localStorage.getItem("raas_cart")||"[]")}catch(e){}
-const save=()=>{try{localStorage.setItem("raas_cart",JSON.stringify(cart))}catch(e){}};
-function addToCart(){
+/* BUY NOW checks out ONLY that product. The customer's real cart is kept aside in HELD (and stays saved)
+   and comes back when the checkout is closed or the order is placed. */
+let HELD=null;
+const save=()=>{try{localStorage.setItem("raas_cart",JSON.stringify(HELD||cart))}catch(e){}};
+function endBuyNow(){if(!HELD)return;cart=HELD;HELD=null;COUPON=null;save()}
+function addToCart(buyNow){
   const needs=cur.sizes&&cur.sizes.length;
   /* clothing with sizes cannot be added without a size; a product with several colours needs a colour */
   const miss=[];if(!colPick){colNeed=true;miss.push($("#colbox"))}if(needs&&!selSize){sizeNeed=true;miss.push($("#szbox"))}
@@ -740,7 +744,9 @@ function addToCart(){
     miss[0]&&miss[0].scrollIntoView({block:"center",behavior:"smooth"});
     return false}
   qty=Math.max(1,Math.min(10,parseInt(qty)||1));
-  const size=needs?selSize:"",k=cur.id+"|"+sel.name+(size?"|"+size:""),l=cart.find(x=>x.k===k);
+  const size=needs?selSize:"",k=cur.id+"|"+sel.name+(size?"|"+size:"");
+  if(buyNow){endBuyNow();HELD=cart;cart=[];COUPON=null}else endBuyNow();
+  const l=cart.find(x=>x.k===k);
   l?l.qty=Math.min(10,l.qty+qty):cart.push({k,id:cur.id,cid:sel.id,name:cur.name,colour:sel.name,size,hex:sel.hex,img:frames(sel)[0],price:eff(cur),qty});
   save();drawCart();const b=$("#cnt");b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");return true;
 }
@@ -878,13 +884,14 @@ $("#cfoot").addEventListener("submit",async e=>{e.preventDefault();
     if(COUPON&&/discount code/i.test(error.message||"")){const c=COUPON.code;COUPON=null;drawCoupon();drawTotals();couponMsg(T("couponRemoved").replace("{c}",c)+" "+error.message);note.textContent=T("couponCheckTotal")}
     return}
   sendToSheet(sheetOrder(data,f,cart));
-  cart=[];COUPON=null;save();drawCart();
+  if(HELD){cart=HELD;HELD=null}else cart=[];   // after BUY NOW the rest of the cart stays for later
+  COUPON=null;save();drawCart();
   $("#cbody").innerHTML=`<p class="empty">${esc(T("orderDone")).replace("{n}","#"+data.number)}</p>`;
   $("#cfoot").innerHTML=(+data.discount>0?`<div class="row"><span>${T("subtotal")}</span><span>${pkr(data.subtotal)}</span></div><div class="row disc"><span>${T("discountLbl")} (${esc(data.coupon||"")})</span><span>−${pkr(data.discount)}</span></div>`:"")+
     `<div class="row tot"><span>${T("total")} (${T("cod")})</span><span>PKR ${Number(data.total).toLocaleString("en-PK")}</span></div>`;
 });
 const openCart=c=>{drawCart(c);$("#drawer").scrollTop=0;$("#drawer").classList.add("on");$("#shade").classList.add("on");document.body.classList.add("nosc")};
-const closeCart=()=>{$("#drawer").classList.remove("on");$("#shade").classList.remove("on");document.body.classList.remove("nosc")};
+const closeCart=()=>{if(HELD){endBuyNow();drawCart()}$("#drawer").classList.remove("on");$("#shade").classList.remove("on");document.body.classList.remove("nosc")};
 $("#cbtn").onclick=()=>openCart();$("#cclose").onclick=closeCart;$("#shade").onclick=closeCart;
 addEventListener("keydown",e=>{if(e.key==="Escape"){closeCart();closeProduct()}});
 
