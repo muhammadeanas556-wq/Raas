@@ -161,13 +161,22 @@ begin
 end $$;
 
 -------------------------------------------------------------------------------
--- 5. place_order: same as before, plus coupon scope / minimum order / clear error messages.
+-- 5. place_order: coupon scope / minimum order / clear error messages; every line stores original, discounted,
+--    coupon share and final price (see migration-order-prices.sql).
 --    The coupon row is locked while the order is written, so its usage limit can never be exceeded.
 -------------------------------------------------------------------------------
+-- is one coupon valid for one product? (same rule raas_coupon_eval uses)
+create or replace function raas_coupon_line_ok(cp coupons, pid uuid) returns boolean language sql stable security definer set search_path=public as $$
+  select coalesce(case coalesce(cp.scope,'all')
+    when 'all' then true
+    when 'products' then pid = any(cp.product_ids)
+    when 'categories' then (select p.category_id from products p where p.id=pid) = any(cp.category_ids)
+    else false end,false) $$;
+
 create or replace function place_order(payload jsonb) returns jsonb language plpgsql security definer set search_path=public as $$
-declare it jsonb; col record; prod products; unit numeric; sub numeric:=0; lines jsonb:='[]'; q int; cfg jsonb;
+declare it jsonb; col record; prod products; unit numeric; sub numeric:=0; orig_sub numeric:=0; lines jsonb:='[]'; out_lines jsonb:='[]'; q int; cfg jsonb;
   sale_pct numeric:=0; chg numeric:=0; free numeric; ship numeric; cp coupons; ev jsonb; disc numeric:=0; ccode text;
-  oid uuid; num bigint; tot numeric; sz text;
+  oid uuid; num bigint; tot numeric; sz text; qtxt text; l jsonb; elig numeric; left_d numeric; share numeric; last_ok int:=0; i int:=0; lt numeric;
 begin
   if length(trim(coalesce(payload->>'name','')))<2 or length(trim(coalesce(payload->>'phone','')))<10
      or length(trim(coalesce(payload->>'address','')))<5 or length(trim(coalesce(payload->>'city','')))<2 then
@@ -180,7 +189,12 @@ begin
   chg:=coalesce(nullif(cfg#>>'{delivery,charge}','')::numeric,0);
   free:=nullif(cfg#>>'{delivery,freeAbove}','')::numeric;
   for it in select * from jsonb_array_elements(payload->'items') loop
-    q:=greatest(1,least(10,coalesce((it->>'qty')::int,1)));
+    -- quantity: whole number 1..10, never zero or negative
+    qtxt:=trim(coalesce(it->>'qty','1'));
+    if qtxt !~ '^[0-9]{1,3}$' or qtxt::int<1 then raise exception 'Quantity must be at least 1'; end if;
+    q:=qtxt::int;
+    if q>10 then raise exception 'You can order at most 10 of one item'; end if;
+    if coalesce(it->>'colour_id','') !~* '^[0-9a-f-]{36}$' then raise exception 'An item is no longer available'; end if;
     select * into col from product_colours where id=(it->>'colour_id')::uuid for update;
     if not found then raise exception 'An item is no longer available'; end if;
     select * into prod from products where id=col.product_id and active;
@@ -195,7 +209,9 @@ begin
     unit:=raas_unit_price(prod,sale_pct);
     update product_colours set stock=stock-q where id=col.id;
     sub:=sub+unit*q;
-    lines:=lines||jsonb_build_object('product_id',prod.id,'colour_id',col.id,'name',prod.name,'colour',col.name,'size',sz,'qty',q,'unit',unit,'image',coalesce(prod.image,col.images[1]));
+    orig_sub:=orig_sub+prod.price*q;
+    lines:=lines||jsonb_build_object('product_id',prod.id,'colour_id',col.id,'name',prod.name,'colour',col.name,'size',sz,'qty',q,
+      'original',prod.price,'unit',unit,'line_total',unit*q,'image',coalesce(prod.image,col.images[1]));
   end loop;
   if coalesce(trim(payload->>'coupon'),'')<>'' then
     select * into cp from coupons where upper(code)=upper(trim(payload->>'coupon')) for update;
@@ -206,15 +222,33 @@ begin
     ccode:=cp.code;
     update coupons set used=used+1 where id=cp.id;
   end if;
+  -- split the coupon discount over the lines it covers (in proportion to their value; the last covered line takes the rounding rest)
+  if disc>0 then
+    i:=0;
+    for l in select * from jsonb_array_elements(lines) loop
+      i:=i+1; if raas_coupon_line_ok(cp,(l->>'product_id')::uuid) then last_ok:=i; end if;
+    end loop;
+    elig:=(ev->>'eligible')::numeric;
+  end if;
+  left_d:=disc; i:=0;
+  for l in select * from jsonb_array_elements(lines) loop
+    i:=i+1; lt:=(l->>'line_total')::numeric; share:=0;
+    if disc>0 and raas_coupon_line_ok(cp,(l->>'product_id')::uuid) then
+      share:=case when i=last_ok then left_d else least(left_d,round(disc*lt/elig)) end;
+      left_d:=left_d-share;
+    end if;
+    out_lines:=out_lines||(l||jsonb_build_object('coupon_discount',share,'final',lt-share));
+  end loop;
   ship:=case when free is not null and sub>=free then 0 else chg end;
   tot:=sub-disc+ship;
   insert into orders(customer_name,phone,email,address,city,items,subtotal,discount,delivery,total,coupon_code)
     values(trim(payload->>'name'),trim(payload->>'phone'),nullif(trim(coalesce(payload->>'email','')),''),trim(payload->>'address'),trim(payload->>'city'),
-           lines,sub,disc,ship,tot,ccode)
+           out_lines,sub,disc,ship,tot,ccode)
     returning id,number into oid,num;
   insert into order_history(order_id,status,note) values(oid,'pending',
     case when ccode is null then 'Order placed by customer' else format('Order placed by customer (coupon %s, −PKR %s)',ccode,disc) end);
-  return jsonb_build_object('number',num,'total',tot,'subtotal',sub,'discount',disc,'delivery',ship,'coupon',ccode);
+  return jsonb_build_object('number',num,'total',tot,'subtotal',sub,'original_subtotal',orig_sub,'discount',disc,'delivery',ship,'coupon',ccode,
+    'created_at',now(),'items',(select coalesce(jsonb_agg(x - 'image' - 'product_id' - 'colour_id'),'[]') from jsonb_array_elements(out_lines) x));
 end $$;
 
 -------------------------------------------------------------------------------
@@ -241,8 +275,9 @@ end $$;
 revoke execute on function raas_sale_pct() from public;
 revoke execute on function raas_unit_price(products,numeric) from public;
 revoke execute on function raas_coupon_eval(coupons,jsonb,numeric) from public;
+revoke execute on function raas_coupon_line_ok(coupons,uuid) from public;
 do $$ begin
-  execute 'revoke execute on function raas_sale_pct(), raas_unit_price(products,numeric), raas_coupon_eval(coupons,jsonb,numeric) from anon, authenticated';
+  execute 'revoke execute on function raas_sale_pct(), raas_unit_price(products,numeric), raas_coupon_eval(coupons,jsonb,numeric), raas_coupon_line_ok(coupons,uuid) from anon, authenticated';
 exception when undefined_object then null; end $$;
 grant execute on function place_order(jsonb), check_coupon(text), apply_coupon(text,jsonb) to anon, authenticated;
 grant execute on function set_order_status(uuid,text,text) to authenticated;

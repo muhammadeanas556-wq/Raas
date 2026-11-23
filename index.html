@@ -3,875 +3,1037 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>RAAS Admin</title>
+<title>RAAS — Modern Clothing</title>
+<meta name="description" content="RAAS — modern clothing brand. Premium fabrics, considered fits, everyday style.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0b0b0a">
 <style>
-:root{--ink:#0a0a0a;--mut:#6b6b6b;--line:#e4e4e4;--soft:#f4f4f4}
+:root{
+  /* The 4 website colours (Admin > Website colours). Everything else is derived from them. */
+  --bg:#0b0b0a; --bg2:#141412; --text:#f6f4ef; --acc:#f7d98b; --acc-text:#16140f;
+  --muted:color-mix(in srgb,var(--text) 64%,transparent);
+  --faint:color-mix(in srgb,var(--text) 42%,transparent);
+  --line:color-mix(in srgb,var(--text) 12%,transparent);
+  --surface:color-mix(in srgb,var(--bg2) 90%,var(--text) 10%);
+  --soft:var(--surface);
+  /* kept for older parts of the code */
+  --primary:var(--acc); --secondary:var(--acc-text); --btn:var(--acc); --btn-text:var(--acc-text); --accent:var(--acc);
+  --radius:14px; --space:clamp(72px,9vw,128px);
+  --head:'Plus Jakarta Sans',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.7,.2,1);
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:#fafafa}
-button,input,select,textarea{font:inherit;color:inherit}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{font-family:var(--body);background:var(--bg);color:var(--text);font-size:var(--bs,15px);line-height:1.65;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;text-rendering:optimizeLegibility}
+::selection{background:var(--acc);color:var(--acc-text)}
+img,svg{display:block;max-width:100%}
+button{font:inherit;cursor:pointer;border:0;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+h1,h2,h3{font-family:var(--head);font-weight:700;line-height:1.05;letter-spacing:-.03em}
+.it{font-style:italic;font-weight:200;letter-spacing:-.02em}
+.wrap{max-width:1280px;margin:0 auto;padding:0 clamp(18px,4vw,48px)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;background:var(--acc);color:var(--acc-text);padding:0 30px;
+  font-family:var(--body);font-size:calc(14px*var(--z-btn,1));font-weight:600;letter-spacing:.02em;border:1px solid var(--acc);border-radius:calc(var(--radius)*.75);
+  position:relative;overflow:hidden;isolation:isolate;transition:transform .3s var(--ease),box-shadow .4s var(--ease),background-color .3s,color .3s,border-color .3s;
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 12px 30px -16px color-mix(in srgb,var(--acc) 70%,transparent)}
+.btn:hover{box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 18px 40px -16px color-mix(in srgb,var(--acc) 85%,transparent);background:color-mix(in srgb,var(--acc) 88%,#fff)}
+.btn:active{transform:scale(.97)!important}
+.btn::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:36%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-20deg);animation:shine 5.5s 2s infinite;pointer-events:none;z-index:-1}
+@keyframes shine{0%,62%{left:-60%}100%{left:140%}}
+.btn span{position:relative;display:inline-flex;align-items:center;gap:10px}
+.btn.ghost,.btn.line{background:transparent;color:var(--text);border-color:color-mix(in srgb,var(--text) 38%,transparent);box-shadow:none}
+.btn.ghost::after,.btn.line::after{display:none}
+.btn.ghost:hover,.btn.line:hover{background:color-mix(in srgb,var(--text) 8%,transparent);border-color:var(--text);box-shadow:none}
+
+/* announcement marquee */
+.announce{background:var(--bg2);color:var(--muted);font-size:calc(11.5px*var(--z-ann,1));letter-spacing:.16em;font-weight:500;overflow:hidden;white-space:nowrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.track{display:inline-flex;gap:64px;animation:slide 32s linear infinite;padding-left:64px}
+.announce .track span::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--acc);margin-right:14px;vertical-align:middle;transform:translateY(-1px)}
+.announce:hover .track,.ticker:hover .track{animation-play-state:paused}
+@keyframes slide{to{transform:translateX(-50%)}}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 78%,transparent);-webkit-backdrop-filter:saturate(140%) blur(16px);backdrop-filter:saturate(140%) blur(16px);border-bottom:1px solid transparent;transition:border-color .3s,background-color .3s;color:var(--text)}
+header.stuck{border-color:var(--line);background:color-mix(in srgb,var(--bg) 88%,transparent)}
+.bar{display:flex;align-items:center;justify-content:space-between;height:76px;gap:16px}
+.logo{font-family:var(--head);font-size:24px;letter-spacing:.22em;font-weight:800;color:var(--text)}
+.logo img{height:28px;width:auto}
+nav{display:flex;gap:36px}
+nav a,.ico{font-size:calc(12.5px*var(--z-nav,1));letter-spacing:.12em;font-weight:500;position:relative;color:var(--muted);transition:color .3s}
+nav a:hover,.ico:hover{color:var(--text)}
+nav a::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:1px;background:var(--acc);transform:scaleX(0);transform-origin:right;transition:transform .35s var(--ease)}
+nav a:hover::after{transform:scaleX(1);transform-origin:left}
+.tools{display:flex;gap:22px;align-items:center}
+.cartbtn b{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--acc);color:var(--acc-text);font-size:10px;font-weight:700;margin-left:7px;letter-spacing:0}
+.cartbtn b.pop{animation:pop .5s var(--ease)}
+@keyframes pop{40%{transform:scale(1.5)}}
+.menu{display:none}
+.search{display:none;border-top:1px solid var(--line);padding:14px 0}
+.search.on{display:block}
+.search input{width:100%;border:0;border-bottom:1px solid var(--line);padding:12px 0;font:inherit;font-size:18px;background:transparent;color:var(--text);outline:0}
+.search input:focus{border-color:var(--acc)}
+
+/* hero */
+.hero{position:relative;min-height:min(88vh,820px);background:var(--bg);color:var(--text);overflow:hidden;display:grid;align-items:center;isolation:isolate;padding:clamp(40px,6vw,72px) 0!important}
+/* soft ambient light in the hero BACKGROUND (lower left, away from the hero image) – switch: Motion > Hero spotlight */
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(60% 75% at 30% 112%,color-mix(in srgb,var(--acc) 34%,transparent),transparent 70%),
+             radial-gradient(40% 50% at 8% 100%,color-mix(in srgb,var(--acc) 12%,transparent),transparent 70%)}
+.no-glow .hero::before{display:none}
+.hero .grid{display:grid;grid-template-columns:1.08fr .92fr;gap:clamp(16px,3vw,40px);align-items:center}
+.hero h1{font-size:calc(clamp(42px,6.1vw,88px)*var(--hs,1)*var(--z-hero,1));font-weight:700;letter-spacing:-.04em;line-height:1.02;max-width:12.5em}
+.hero h1 .w{display:inline-block;overflow:hidden;vertical-align:bottom;padding:0 .02em .1em 0;margin-bottom:-.06em}
+.hero h1 .w.it{padding-right:.08em}
+.hero h1 .w i{display:inline-block;font-style:inherit;transform:translateY(105%);animation:up 1s var(--ease) forwards}
+@keyframes up{to{transform:none}}
+.hero p{max-width:440px;margin:26px 0 36px;color:var(--muted);font-size:calc(var(--bs,15px)*1.12*var(--z-herod,1));line-height:1.6;opacity:0;animation:fade 1s .9s forwards}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap;opacity:0;animation:fade 1s 1.1s forwards}
+.hero .ctas .btn{min-width:150px}
+.stats{display:flex;gap:clamp(28px,5vw,64px);margin-top:clamp(40px,6vw,72px);padding-top:26px;border-top:1px solid var(--line);opacity:0;animation:fade 1s 1.3s forwards;flex-wrap:wrap}
+.stats:empty{display:none}
+.stats b{display:block;font-family:var(--head);font-size:clamp(20px,2vw,26px);font-weight:600;letter-spacing:-.02em;line-height:1.2}
+.stats small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+@keyframes fade{to{opacity:1}}
+.stage{position:relative;aspect-ratio:1;display:grid;place-items:center}
+.hero .scroll{position:absolute;left:50%;bottom:20px;width:1px;height:42px;background:var(--line);overflow:hidden}
+.hero .scroll::after{content:"";position:absolute;inset:0;background:var(--acc);animation:drip 2.2s ease-in-out infinite}
+@keyframes drip{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
+
+/* ticker */
+.ticker{background:var(--bg);color:var(--text);border-block:1px solid var(--line);overflow:hidden;white-space:nowrap;padding:22px 0;font-family:var(--head);font-weight:600;letter-spacing:-.02em;font-size:calc(clamp(26px,3.6vw,46px)*var(--z-tick,1))}
+.ticker .track{animation-duration:calc(40s*var(--k,1));gap:44px;align-items:center}
+.ticker em{font-style:italic;font-weight:200;color:var(--acc)}
+.ticker .track>span:not(:empty):nth-child(even){color:var(--faint);font-weight:300}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform .9s var(--ease)}
+.rv.in{opacity:1;transform:none}
+
+/* collection */
+section{padding:var(--space) 0}
+#shop{background:var(--bg);color:var(--text)}
+.head{display:flex;justify-content:space-between;align-items:end;flex-wrap:wrap;gap:20px;margin-bottom:44px}
+.head h2{font-size:calc(clamp(34px,4.4vw,60px)*var(--hs,1)*var(--z-sec,1))}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{padding:10px 18px;border:1px solid var(--line);font-size:13px;font-weight:500;border-radius:999px;color:var(--muted);transition:.3s}
+.chip:hover{color:var(--text);border-color:color-mix(in srgb,var(--text) 40%,transparent)}
+.chip.on{background:var(--acc);color:var(--acc-text);border-color:var(--acc)}
+select{padding:10px 36px 10px 16px;border:1px solid var(--line);font:inherit;font-size:13px;background:var(--bg2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--text);border-radius:999px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.products{display:grid;grid-template-columns:repeat(4,1fr);gap:36px 22px}
+.pc{cursor:pointer;display:block;text-align:left;width:100%;color:var(--text)}
+.pc .img{position:relative;aspect-ratio:4/5;background:var(--surface);overflow:hidden;border-radius:var(--radius);box-shadow:0 0 0 1px var(--line) inset}
+.pc .img>div{position:absolute;inset:0;width:100%;height:100%;transition:opacity .5s,transform .9s var(--ease)}
+.pc .img>div>svg,.pc .img>div>img{width:100%;height:100%;object-fit:cover}
+.pc .img .b{opacity:0}
+.pc:hover .img .b{opacity:1}.pc:hover .img .a{transform:none}
+.tag{position:absolute;left:12px;top:12px;z-index:2;background:var(--bg);color:var(--text);font-size:10px;font-weight:600;letter-spacing:.12em;padding:6px 10px;border-radius:999px}
+.hint{position:absolute;right:12px;bottom:12px;z-index:2;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--text);font-size:10px;letter-spacing:.1em;padding:6px 10px;border-radius:999px;transform:translateY(8px);opacity:0;transition:.4s var(--ease)}
+.pc:hover .hint{transform:none;opacity:1}
+.pc h3{font-family:var(--body);font-size:calc(15px*var(--z-card,1));font-weight:600;letter-spacing:-.01em;margin-top:16px;line-height:1.35}
+.pc .cat{font-size:12.5px;color:var(--muted);margin-top:2px}
+.pc .pr{font-size:calc(14.5px*var(--z-price,1));margin-top:6px;font-weight:500}
+.dots{display:flex;gap:6px;margin-top:12px}
+.dot{width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}
+.empty{grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted)}
+
+/* product page overlay */
+.pdp{position:fixed;inset:0;z-index:80;background:var(--bg);color:var(--text);overflow-y:auto;transform:translateY(100%);visibility:hidden;transition:transform .7s var(--ease),visibility .7s}
+.pdp.open{transform:none;visibility:visible}
+.pdp .top{position:sticky;top:0;z-index:3;background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);display:flex;justify-content:space-between;align-items:center;padding:18px clamp(18px,4vw,48px);border-bottom:1px solid var(--line)}
+.pgrid{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(24px,5vw,80px);padding:36px 0 var(--space)}
+.gal{display:grid;grid-template-columns:76px 1fr;gap:14px;align-self:start;position:sticky;top:90px}
+.thumbs{display:flex;flex-direction:column;gap:10px}
+.thumbs button{aspect-ratio:1;background:var(--surface);border:1px solid transparent;overflow:hidden;opacity:.55;transition:.3s;border-radius:calc(var(--radius)*.6)}
+.thumbs button.on{border-color:var(--acc);opacity:1}
+.thumbs svg,.thumbs img{width:100%;height:100%;object-fit:cover}
+.view{position:relative;aspect-ratio:1;background:var(--surface);overflow:hidden;touch-action:pan-y;user-select:none;cursor:grab;border-radius:var(--radius)}
+.view.drag{cursor:grabbing}
+.view .layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;transition:transform .15s,opacity .45s}
+.view.zoom{cursor:zoom-out}
+.view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--bg2)}
+.vbar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px;z-index:2}
+.pill{background:color-mix(in srgb,var(--bg) 80%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:var(--text);font-size:11px;font-weight:500;letter-spacing:.08em;padding:8px 13px;border-radius:99px}
+.pill.on{background:var(--acc);color:var(--acc-text)}
+.prog{position:absolute;left:0;bottom:0;height:3px;background:var(--acc);z-index:2;transition:width .1s}
+.swipe{position:absolute;left:50%;top:46%;z-index:2;transform:translate(-50%,-50%);pointer-events:none;animation:nudge 2.2s 1s 2 both;opacity:0}
+@keyframes nudge{0%{opacity:0;transform:translate(-90%,-50%)}30%{opacity:1}70%{opacity:1;transform:translate(-10%,-50%)}100%{opacity:0;transform:translate(-10%,-50%)}}
+.info h1{font-size:calc(clamp(32px,3.6vw,50px)*var(--hs,1)*var(--z-pdp,1))}
+.info .price{font-size:calc(22px*var(--z-pdpp,1));font-weight:500;margin:16px 0 6px}
+.info .price s{color:var(--muted);font-size:16px;margin-left:8px}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.badge::before{content:"";width:8px;height:8px;border-radius:50%;background:#5bd28a;box-shadow:0 0 0 4px color-mix(in srgb,#5bd28a 18%,transparent)}
+.badge.out::before{background:transparent;border:1px solid var(--muted);box-shadow:none}
+.lbl{font-size:12px;letter-spacing:.12em;margin:30px 0 12px;font-weight:600}
+.lbl span{font-weight:400;color:var(--muted);margin-left:8px;letter-spacing:0}
+.sw{display:flex;gap:12px;flex-wrap:wrap}
+.sw button{width:38px;height:38px;border-radius:50%;box-shadow:0 0 0 1px var(--line) inset;position:relative;transition:transform .3s var(--ease)}
+.sw button:hover{transform:scale(1.1)}
+.sw button.on::after{content:"";position:absolute;inset:-5px;border:1px solid var(--acc);border-radius:50%;animation:ringin .4s var(--ease)}
+@keyframes ringin{from{transform:scale(.7);opacity:0}}
+.sw button.na{opacity:.35}
+.sw button.na::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted);transform:rotate(45deg)}
+.qrow{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
+.szbox{margin-top:30px;scroll-margin-top:90px}.szbox .lbl{margin:0 0 12px}
+.szg{display:flex;flex-wrap:wrap;gap:10px}
+.szg button{min-width:52px;min-height:46px;padding:0 16px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:500;letter-spacing:.04em;border-radius:4px;cursor:pointer;transition:background .25s,color .25s,border-color .25s,transform .25s}
+.szg button:hover{border-color:var(--text)}
+.szg button.on{background:var(--acc);color:var(--acc-text);border-color:var(--acc)}
+.szg button:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.szg button:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.szerr{display:none;margin-top:10px;font-size:13px;color:#e5484d;font-weight:500}
+.szbox.need .szerr{display:block}.szbox.need .szg button:not(.on){border-color:#e5484d}
+.szbox.need .szg{animation:szshake .4s}
+@keyframes szshake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.colbox{scroll-margin-top:90px}.colbox .lbl{margin:30px 0 12px}
+.colbox.need .szerr{display:block}.colbox.need .sw{animation:szshake .4s}.colbox.need .sw button{box-shadow:0 0 0 1px #e5484d inset}
+.ptot{align-self:center;font-size:14px;color:var(--muted)}.ptot b{color:var(--text);font-weight:600;font-size:16px;margin-left:4px}.ptot small{display:block;font-size:12px}
+.ci .lt{text-align:right;white-space:nowrap}.ci .lt small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.ci .szpick{margin-top:6px;max-width:100%;padding:6px 8px;font-size:13px;border:1px solid #e5484d;background:transparent;color:var(--text);border-radius:4px}
+@media(max-width:600px){.szg{gap:8px}.szg button{flex:1 0 calc(25% - 8px);min-width:0;padding:0 8px}}
+.qty{display:inline-flex;border:1px solid var(--line);align-items:center;border-radius:calc(var(--radius)*.75)}
+.qty button{width:46px;height:50px;font-size:18px;color:var(--muted)}.qty button:hover{color:var(--text)}.qty button:disabled{opacity:.35;pointer-events:none}.qty output{min-width:34px;text-align:center;font-weight:600}
+.acts{display:grid;gap:10px;margin-top:12px}
+.spec{margin-top:36px;border-top:1px solid var(--line)}
+.spec details{border-bottom:1px solid var(--line);padding:18px 0}
+.spec summary{cursor:pointer;font-size:13px;letter-spacing:.1em;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+.spec summary::-webkit-details-marker{display:none}
+.spec summary::after{content:"+";transition:transform .3s;color:var(--acc);font-size:18px;line-height:1}
+.spec details[open] summary::after{transform:rotate(45deg)}
+.spec p{margin-top:10px;color:var(--muted)}
+
+/* about */
+.about{background:var(--bg2);color:var(--text)}
+.about .in{max-width:820px}
+.about h2{font-size:calc(clamp(32px,4.4vw,58px)*var(--hs,1)*var(--z-sec,1));margin-bottom:26px}
+.about p{font-family:var(--head);font-weight:300;letter-spacing:-.015em;font-size:calc(clamp(21px,2.4vw,31px)*var(--z-about,1));line-height:1.42;color:color-mix(in srgb,var(--text) 88%,transparent)}
+.about p .ln{display:block;overflow:hidden}
+.contact{display:flex;gap:14px 40px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+
+footer{background:var(--bg);color:var(--text);padding:72px 0 30px;border-top:1px solid var(--line)}
+.fg{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:32px}
+footer h4{font-size:calc(11.5px*var(--z-foot,1));letter-spacing:.16em;margin-bottom:16px;font-weight:600;color:var(--text)}
+footer li,.fg p{list-style:none;margin:9px 0;color:var(--muted);font-size:calc(14px*var(--z-foot,1))}
+footer li a{transition:color .3s}footer li a:hover{color:var(--acc)}
+#fAbout{color:var(--muted)!important}
+.copy{border-top:1px solid var(--line);margin-top:48px;padding-top:22px;font-size:12px;color:var(--faint)}
+
+/* cart drawer */
+.shade{position:fixed;inset:0;background:rgba(0,0,0,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);z-index:90;opacity:0;visibility:hidden;transition:.4s}
+.shade.on{opacity:1;visibility:visible}
+.drawer{position:fixed;left:50%;top:50%;width:min(520px,94vw);max-height:90vh;max-height:90dvh;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg2);color:var(--text);z-index:95;opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,-46%) scale(.96);transition:opacity .35s,transform .45s var(--ease),visibility .35s;border:1px solid var(--line);border-radius:calc(var(--radius)*1.2);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.drawer.on{opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.drawer .dh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2;background:var(--bg2)}
+.drawer .db{padding:8px 22px 0}
+.drawer .df{border-top:1px solid var(--line);padding:18px 22px 24px}
+.qtyc{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;margin:8px 0 2px}
+.qtyc button{width:32px;height:32px;font-size:17px;line-height:1;color:var(--text)}
+.qtyc button:disabled{opacity:.35}
+.qtyc output{min-width:26px;text-align:center;font-weight:600;font-size:14px}
+body.nosc{overflow:hidden}
+@media(max-width:600px){.drawer{width:94vw;max-height:92vh;max-height:92dvh}.drawer .dh,.drawer .db,.drawer .df{padding-left:16px;padding-right:16px}.form input,.form textarea{font-size:16px}.ci{grid-template-columns:64px 1fr auto}.ci .t{width:64px;height:78px}}
+.pc:hover .img .a>img,.pc:hover .img .a>svg{transform:scale(1.14)}
+.pc .img .a>img,.pc .img .a>svg{transition:transform .9s var(--ease)}
+.ci{display:grid;grid-template-columns:76px 1fr auto;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);animation:fade .5s forwards;opacity:0}
+.ci .t{width:76px;height:92px;background:var(--surface);overflow:hidden;border-radius:calc(var(--radius)*.6)}
+.ci .t svg,.ci .t img{width:100%;height:100%;object-fit:cover}
+.ci small{color:var(--muted);display:block}
+.ci .rm{font-size:12px;text-decoration:underline;color:var(--muted)}
+.row{display:flex;justify-content:space-between;margin:6px 0;font-size:14px}
+.row.tot{font-weight:600;font-size:16px;border-top:1px solid var(--line);padding-top:12px;margin-top:10px}
+.form{display:grid;gap:10px;margin-top:14px}
+.form input,.form textarea{width:100%;padding:14px;border:1px solid var(--line);font:inherit;background:var(--bg);color:var(--text);border-radius:calc(var(--radius)*.6);outline:0;transition:border-color .3s}
+.form input:focus,.form textarea:focus{border-color:var(--acc)}
+.form input::placeholder,.form textarea::placeholder{color:var(--faint)}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+/* discount code box at checkout */
+.cpn{margin:2px 0 14px;padding:14px;border:1px dashed color-mix(in srgb,var(--text) 22%,transparent);border-radius:calc(var(--radius)*.6)}
+.cpn>b{display:block;font-size:13px;font-weight:600;letter-spacing:.02em;margin-bottom:10px}
+.cpnrow{display:flex;gap:8px}
+.cpnrow input{flex:1;min-width:0;padding:12px 14px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:calc(var(--radius)*.6);font:inherit;letter-spacing:.06em;text-transform:uppercase;outline:0;transition:border-color .3s}
+.cpnrow input::placeholder{text-transform:none;letter-spacing:0;color:var(--faint)}
+.cpnrow input:focus{border-color:var(--acc)}.cpnrow input.bad{border-color:#e5484d}
+.cpnrow .btn{min-height:46px;padding:0 22px;flex:none}.cpnrow .btn[disabled]{opacity:.55;pointer-events:none}
+.cpmsg{font-size:12.5px;margin-top:8px;line-height:1.45}.cpmsg.err{color:#e5484d}.cpmsg.ok{color:var(--muted)}
+.cpchip{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13.5px;flex-wrap:wrap}
+.cpchip i{font-style:normal;color:var(--acc);margin-right:6px}.cpchip b{letter-spacing:.06em}
+.cpchip button{font-size:12px;text-decoration:underline;color:var(--muted)}.cpchip button:hover{color:var(--text)}
+.row.disc span:last-child{color:var(--acc);font-weight:600}.row.cpl span:last-child{letter-spacing:.06em}
+@media(max-width:600px){.cpnrow input{font-size:16px}.cpnrow .btn{padding:0 16px}}
+.cur{position:fixed;width:34px;height:34px;border-radius:50%;pointer-events:none;z-index:200;mix-blend-mode:difference;border:1px solid #fff;transform:translate(-50%,-50%);transition:width .3s,height .3s,background .3s;display:none}
+.cur.big{width:70px;height:70px;background:#fff}
+@media (hover:hover) and (pointer:fine){.cur{display:block}}
+
+/* built-in sample garment (shown only when no hero video/image is uploaded) */
+.garment{width:100%;height:100%;max-width:420px;margin:auto;filter:drop-shadow(0 30px 40px rgba(0,0,0,.5))}
+.wl{position:relative;width:260px;height:170px;transform-style:preserve-3d}
+.stage .card3d{width:100%;height:100%;display:grid;place-items:center}
+.wf{position:absolute;display:block;backface-visibility:hidden;background:linear-gradient(135deg,#3a3833,#16150f 55%,#2b2925)}
+.wf.fr,.wf.bk{inset:0;border-radius:12px}
+.wf.fr{transform:translateZ(17px)}
+.wf.bk{transform:rotateY(180deg) translateZ(17px)}
+.wf.sl,.wf.sr{width:34px;height:170px;left:113px;background:linear-gradient(90deg,#0d0d0b,#262420)}
+.wf.sl{transform:rotateY(-90deg) translateZ(130px)}
+.wf.sr{transform:rotateY(90deg) translateZ(130px)}
+.wf.sb{width:260px;height:34px;top:68px;background:#0b0b09;transform:rotateX(-90deg) translateZ(85px)}
+.wf.fr::before{content:"";position:absolute;inset:11px;border:1px dashed color-mix(in srgb,var(--acc) 45%,transparent);border-radius:8px}
+.wf.fr::after{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.16) 50%,transparent 65%);background-size:250% 100%;animation:sheen 5s ease-in-out infinite}
+@keyframes sheen{0%{background-position:150% 0}100%{background-position:-50% 0}}
+.wf.fr b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--head);font-weight:700;letter-spacing:.35em;text-indent:.35em;font-size:26px;color:var(--acc)}
+.kd{position:absolute;left:22px;top:24px;width:216px;height:130px;border-radius:10px;background:linear-gradient(135deg,#fbf8f1,#d9d3c4);transform:translateZ(var(--z));animation:pk 6s ease-in-out infinite}
+.kd::before{content:"";position:absolute;left:16px;top:16px;width:28px;height:21px;border-radius:4px;background:rgba(0,0,0,.22)}
+.kd.k1{--z:-6px}.kd.k2{--z:2px;left:34px;background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 60%,#000));animation-delay:.45s}.kd.k3{--z:9px;left:12px;background:linear-gradient(135deg,#2a2925,#121210);animation-delay:.9s}
+@keyframes pk{0%,12%{transform:translateZ(var(--z)) translateY(0)}34%,62%{transform:translateZ(var(--z)) translateY(-78px)}84%,100%{transform:translateZ(var(--z)) translateY(0)}}
+
+/* hero hero media: shown as an isolated object, NO circle, ring, spotlight or glow behind it */
+.hero .wrap.grid{transform:translate3d(0,calc(var(--sy,0)*.16px),0);opacity:calc(1 - var(--sy,0)/1000)}
+body:not(.ready) .hero *,body:not(.ready) .stage{animation-play-state:paused}
+.stage{--px:0;--py:0}
+.media{position:absolute;inset:2%;perspective:1100px;transform:translate3d(calc(var(--px)*10px),calc(var(--py)*8px),0);transition:transform .7s var(--ease)}
+.mv{position:absolute;inset:0}
+.mv.first{animation:mfirst 1.6s .8s var(--ease) both}
+@keyframes mfirst{from{opacity:0;transform:translateY(50px) scale(.9)}}
+.mv.in{animation:vin 1.1s var(--ease) both}
+@keyframes vin{from{opacity:0;transform:scale(.96)}}
+.mv.out{animation:vout .9s var(--ease) both;pointer-events:none}
+@keyframes vout{to{opacity:0;transform:scale(1.02)}}
+.fl{width:100%;height:100%;display:grid;place-items:center;perspective:1100px;animation:float 7s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-12px)}}
+.mv img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
+/* transparent hero video (see shared/raas-extras.js). The video/canvas has NO background, border or frame. */
+.wv{position:relative;width:100%;height:100%;background:none;opacity:0;transition:opacity .8s var(--ease)}
+.wv.ok{opacity:1}
+.wv video,.wv canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:transparent;border:0;outline:0;display:block}
+.wv canvas{opacity:0}
+.wv.key canvas{opacity:1;filter:drop-shadow(0 30px 36px rgba(0,0,0,.5))}
+.wv.key video{opacity:.01;pointer-events:none}
+.wv.native video{filter:drop-shadow(0 30px 36px rgba(0,0,0,.5))}
+/* last resort when the file has neither transparency nor a plain background: soften the hard edges */
+.wv.plain video{-webkit-mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 62%,transparent 100%);mask-image:radial-gradient(ellipse 50% 50% at 50% 50%,#000 62%,transparent 100%)}
+.vdots{position:absolute;left:0;right:0;bottom:-2%;display:flex;justify-content:center;gap:8px;z-index:3}
+.vdots button{font-size:10px;letter-spacing:.12em;color:var(--muted);padding:7px 13px;border:1px solid var(--line);border-radius:99px;transition:.3s}
+.vdots button.on{background:var(--acc);color:var(--acc-text);border-color:var(--acc)}
+.loader{position:fixed;inset:0;z-index:300;background:var(--bg);color:var(--text);display:grid;place-items:center;clip-path:inset(0);transition:clip-path 1.1s var(--ease)}
+.loader span{font-family:var(--head);font-weight:800;font-size:clamp(30px,7vw,64px);letter-spacing:.4em;text-indent:.4em;animation:lw 1.1s var(--ease) both}
+@keyframes lw{from{letter-spacing:.9em;opacity:0}}
+.loader.go{clip-path:inset(0 0 100% 0)}.loader.gone{display:none}
+/* masked headings, card image reveal, product page entrance */
+.head h2,.about h2{overflow:hidden;padding-bottom:.12em}
+.mk{display:block;transform:translateY(105%);transition:transform 1.1s var(--ease)}
+.in .mk{transform:none}
+.pc .img{clip-path:inset(0 0 100% 0 round var(--radius));transition:clip-path 1.1s var(--ease)}
+.pc.in .img{clip-path:inset(0 round var(--radius))}
+.pc .img .a{transform:scale(1.15)}
+.pc.in .img .a{transform:scale(1)}
+.pc.in:hover .img .a{transform:none}
+@keyframes rise{from{opacity:0;transform:translateY(28px)}}
+#pbody.first .gal{animation:rise .9s .15s var(--ease) both}
+#pbody.first .info>*{animation:rise .9s var(--ease) both;animation-delay:calc(.25s + var(--i,0)*.07s)}
+@media(prefers-reduced-motion:reduce){.loader{display:none}.hero .wrap.grid{transform:none;opacity:1}}
+
+/* configuration-driven overrides */
 [hidden]{display:none!important}
-.login{min-height:100vh;display:grid;place-items:center;background:#000;padding:20px}
-.login form{background:#fff;padding:36px;width:min(380px,100%);display:grid;gap:14px}
-.login h1{font:600 28px Georgia,serif;letter-spacing:.3em;text-align:center}
-input,select,textarea{border:1px solid var(--line);padding:10px 12px;background:#fff;width:100%;border-radius:4px}
-textarea{resize:vertical}
-input[type=color]{padding:2px;height:40px;width:56px}input[type=checkbox]{width:auto}input[type=range]{padding:0}
-.b{background:#000;color:#fff;border:1px solid #000;padding:10px 18px;cursor:pointer;border-radius:4px;font-weight:500}
-.b:hover{opacity:.85}.b.o{background:#fff;color:#000;border-color:#cfcfcf}.b.s{padding:5px 10px;font-size:12px}.b.d{background:#fff;color:#b00020;border-color:#e0b4bb}
-.b[disabled]{opacity:.5;pointer-events:none}
-.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
-aside{background:#000;color:#fff;padding:22px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;overflow:auto}
-aside .lg{font:600 24px Georgia,serif;letter-spacing:.3em;padding:0 10px 18px}
-aside button{background:none;border:0;color:#bbb;text-align:left;padding:10px;cursor:pointer;border-radius:4px}
-aside button:hover{color:#fff;background:#1a1a1a}aside button.on{background:#fff;color:#000}
-main{padding:24px clamp(14px,3vw,34px);min-width:0}
-.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap}
-.top h1{font-size:22px}.mut{color:var(--mut)}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px}
-.card{background:#fff;border:1px solid var(--line);padding:16px;border-radius:6px}
-.card small{display:block;color:var(--mut);font-size:12px}.card b{font-size:24px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:18px}
-.panel h3{font-size:15px;margin-bottom:12px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.bars{display:flex;align-items:flex-end;gap:10px;height:150px}
-.bars div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%;font-size:11px;color:var(--mut)}
-.bars i{display:block;width:100%;background:#000;min-height:2px;border-radius:2px 2px 0 0}
-.tw{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:6px}
-table{width:100%;border-collapse:collapse;min-width:640px}
-th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
-th{font-size:12px;color:var(--mut);font-weight:500;background:var(--soft);white-space:nowrap}
-tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
-.th{width:44px;height:44px;object-fit:cover;background:var(--soft);border-radius:4px}
-.tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;background:var(--soft)}
-.tag.pending{background:#fff3cd}.tag.confirmed,.tag.processing{background:#dbeafe}.tag.shipped{background:#e0e7ff}.tag.delivered{background:#d1fae5}.tag.cancelled{background:#fde2e2}
-.bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.bar input,.bar select{width:auto;min-width:180px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:grid;place-items:start center;overflow:auto;padding:30px 12px}
-.mbox{background:#fff;width:min(560px,100%);padding:24px;border-radius:8px}.mbox.wide{width:min(900px,100%)}
-.mbox h2{font-size:18px;margin-bottom:14px}
-.f{display:grid;gap:5px;margin-bottom:12px}.f>span{font-size:12px;color:var(--mut)}
-.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
-.colb{border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px;background:#fcfcfc}
-.colb .h{display:grid;grid-template-columns:1fr 200px 90px auto;gap:8px;margin-bottom:10px;align-items:center}
-.hexf{display:flex;gap:8px;align-items:center}.hexf input{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em}
-.hexf input::placeholder{text-transform:none;letter-spacing:0}
-.swatch{flex:none;width:40px;height:40px;border-radius:6px;border:1px solid #d6d6d6;box-shadow:inset 0 0 0 2px #fff}
-.swatch.empty{background:repeating-conic-gradient(#e9e9e9 0 25%,#fff 0 50%) 0 0/12px 12px!important}
-input.bad{border-color:#b00020!important;background:#fff8f8}
-.hexerr{color:#b00020;font-size:12px;margin:-4px 0 4px}
-.szs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}
-.szs label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#fff;cursor:pointer;font-size:13px;min-height:44px}
-.szs label b{font-size:14px;min-width:34px}.szs label span{color:var(--mut);font-size:12px}
-.szs input{width:auto;flex:none}.szs label.on{border-color:#000;background:#f4f4f4;box-shadow:inset 0 0 0 1px #000}
-.imgs{display:flex;gap:8px;flex-wrap:wrap}
-.im{position:relative;width:74px;height:74px}.im img{width:100%;height:100%;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
-.im button{position:absolute;top:2px;background:#fff;border:1px solid #ccc;border-radius:3px;font-size:10px;padding:0 4px;cursor:pointer}
-.im .x{right:2px}.im .m{left:2px}
-.addimg{width:74px;height:74px;border:1px dashed #aaa;border-radius:4px;display:grid;place-items:center;font-size:11px;color:var(--mut);cursor:pointer;text-align:center}
-.site{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:16px;align-items:start}
-.site .pane{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
-.pvw{background:#fff;border:1px solid var(--line);border-radius:6px;position:sticky;top:12px;overflow:hidden}
-.pvw iframe{width:100%;height:calc(100vh - 120px);border:0;display:block;margin:0 auto;transition:width .3s}
-.pvw.m iframe{width:390px;border-inline:1px solid var(--line)}
-.cp{display:flex;gap:8px}
-.mrow{display:flex;gap:8px;margin:6px 0}
-.lay{border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:8px;background:#fcfcfc}
-.lay label{font-size:12px;color:var(--mut);display:grid;gap:2px}
-.mrow2{display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;margin-bottom:6px;align-items:center}
-.tg{display:flex;gap:10px;align-items:center;margin-bottom:12px}
-#toast{position:fixed;bottom:20px;left:50%;transform:translate(-50%,30px);background:#000;color:#fff;padding:12px 20px;border-radius:6px;opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:90vw}
-#toast.on{opacity:1;transform:translate(-50%,0)}#toast.bad{background:#b00020}
-.tbar{display:flex;gap:6px;flex-wrap:wrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.b.on{background:#000;color:#fff;border-color:#000}.b.o.on{background:#000;color:#fff}
-.pvw .bar{border-bottom:1px solid var(--line)}.panel a{color:#2563eb}
-#pdbox{border:1px solid var(--line);border-radius:6px;padding:12px;margin:12px 0;background:#fcfcfc;transition:opacity .2s}
-@media(max-width:900px){.shell{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}aside .lg{width:100%}.grid2,.site,.r2,.r3{grid-template-columns:1fr}.site .pane,.pvw{position:static;max-height:none}.pvw iframe{height:70vh}.colb .h{grid-template-columns:1fr 1fr}.colb .h>input:first-child{grid-column:1/-1}.colb .h>button{grid-column:1/-1;justify-self:end}}
-@media print{body *{visibility:hidden}.printable,.printable *{visibility:visible}.printable{position:absolute;left:0;top:0;width:100%}}
-.specrow{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px}
-.mainimg{display:flex;gap:12px;align-items:center}.mainimg .im{position:relative;width:96px;height:96px}.mainimg .im img{width:100%;height:100%;object-fit:cover;border-radius:6px;border:1px solid var(--line)}.mainimg .x{position:absolute;top:4px;right:4px;background:#000;color:#fff;border:0;border-radius:50%;width:22px;height:22px;cursor:pointer}
-.wsw{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:#fcfcfc;margin-bottom:12px;flex-wrap:wrap}
-@media(max-width:640px){.specrow{grid-template-columns:1fr auto}.specrow input:nth-child(2){grid-column:1/2}}
+.announce .track{animation-duration:calc(32s*var(--k,1))}
+.fl{animation-duration:calc(7s*var(--k,1))}
+.mv.first{animation-duration:calc(1.6s*var(--k,1))}
+.rv{transition-duration:calc(.9s*var(--k,1))}.mk{transition-duration:calc(1.1s*var(--k,1))}
+.no-reveal .rv{opacity:1!important;transform:none!important}
+.no-mask .mk{transform:none}
+.no-cardReveal .pc .img{clip-path:none}.no-cardReveal .pc .img .a{transform:none}
+.no-cursor .cur{display:none!important}
+.no-shine .btn::after{display:none}
+.no-float .fl{animation:none}
+.no-parallax .media{transform:none!important}
+.no-parallax .hero .wrap.grid{transform:none!important;opacity:1!important}
+.no-ticker .announce .track,.no-ticker .ticker .track{animation:none}
+.no-loader .loader{display:none}
+
+/* sale strip + countdown + discount badges */
+.sale{display:none;background:var(--bg2);color:var(--text);border-bottom:1px solid var(--line)}
+.sale.on{display:block}
+.sale .wrap{display:flex;justify-content:center;align-items:center;gap:28px;flex-wrap:wrap;padding-block:22px}
+.sale h3{font-size:clamp(20px,2.6vw,30px);font-weight:600}
+.cdn{display:flex;gap:8px}
+.cdn div{background:var(--surface);color:var(--text);min-width:56px;padding:8px 6px;text-align:center;border-radius:calc(var(--radius)*.6);overflow:hidden;box-shadow:0 0 0 1px var(--line) inset}
+.cdn b{display:block;font-family:var(--head);font-weight:700;font-size:22px;line-height:1.15;color:var(--acc)}
+.cdn b.flip{animation:flip .5s var(--ease)}
+@keyframes flip{from{transform:translateY(-70%);opacity:0}}
+.cdn small{font-size:9px;letter-spacing:.12em;color:var(--muted)}
+.pr s,.price s{color:var(--muted);font-size:.85em;margin-left:8px;font-weight:400}
+.off{display:inline-block;background:var(--acc);color:var(--acc-text);font-size:11px;font-weight:700;letter-spacing:.08em;padding:5px 10px;border-radius:999px;margin-left:10px;vertical-align:middle}
+.tag.sl{left:auto;right:12px;background:var(--acc);color:var(--acc-text)}
+.pcd{margin-top:14px}.pcd small{display:block;color:var(--muted);margin-bottom:6px}
+
+@media(max-width:900px){
+  nav{display:none}.menu{display:inline}
+  nav.open{display:flex;position:absolute;top:76px;left:0;right:0;background:var(--bg);flex-direction:column;padding:22px;gap:20px;border-bottom:1px solid var(--line)}
+  .hero{min-height:auto}
+  .hero .grid{grid-template-columns:1fr}.stage{max-width:400px;width:100%;margin:0 auto;order:-1}
+  .hero::before{background:radial-gradient(90% 55% at 50% 108%,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%)}
+  .stats{gap:26px}
+  .stage .wl{scale:.95}.sale .wrap{gap:14px}
+  .products{grid-template-columns:repeat(2,1fr);gap:26px 12px}
+  .pgrid{grid-template-columns:1fr}.gal{position:static;grid-template-columns:1fr}
+  .thumbs{flex-direction:row;order:2}.thumbs button{width:64px}
+  .fg{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){.hero .ctas .btn{flex:1;min-width:0;padding:0 16px;white-space:nowrap}.stats{justify-content:space-between;gap:18px}.stats>div{min-width:0}.stats small{font-size:12px}.logo{font-size:20px;letter-spacing:.18em}.tools{gap:14px}nav a,.ico{letter-spacing:.08em}.bar{height:64px}nav.open{top:64px}.hero{padding-top:12px!important}.stage{max-width:340px}}
+@media(min-width:1200px){.products.g3{grid-template-columns:repeat(3,1fr)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}.hero h1 .w i,.hero p,.hero .ctas,.stats{opacity:1;transform:none}.wv{opacity:1}}
+
+/* extra motion layers + banner (admin-controlled) */
+.hlayers{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.hero .wrap.grid{position:relative;z-index:2}
+.hbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:var(--bgo,.4);z-index:0}
+.hl{position:absolute;translate:-50% -50%}
+.hl.back{z-index:1}.hl.front{z-index:3}
+.hl img,.hl video{width:100%;height:auto;display:block}
+.an-float{animation:hfloat calc(6s*var(--k,1)) ease-in-out infinite}
+.an-spin{animation:hspin calc(24s*var(--k,1)) linear infinite}
+.an-pulse{animation:hpulse calc(4s*var(--k,1)) ease-in-out infinite}
+.an-drift{animation:hdrift calc(9s*var(--k,1)) ease-in-out infinite}
+@keyframes hfloat{50%{transform:translateY(-18px)}}
+@keyframes hspin{to{transform:rotate(360deg)}}
+@keyframes hpulse{50%{transform:scale(1.08)}}
+@keyframes hdrift{50%{transform:translateX(26px)}}
+section.banner{position:relative;height:var(--bh,60vh);min-height:240px;padding:0;overflow:hidden;background:var(--bg2);display:grid;place-items:center;text-align:center}
+.bmedia{position:absolute;inset:0}.bmedia>*{width:100%;height:100%;object-fit:cover}
+.banner::after{content:"";position:absolute;inset:0;background:#000;opacity:var(--bo,.4)}
+.btxt{position:relative;z-index:2;max-width:760px;padding:0 20px}
+.btxt h2{font-size:calc(clamp(34px,6vw,80px)*var(--hs,1))}
+.btxt p{margin:14px 0 26px;font-size:calc(var(--bs,15px)*1.1);opacity:.85}
+.cnames{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:12px;color:var(--muted)}.cnames .on{color:var(--text);font-weight:600}
+.spt{width:100%;border-collapse:collapse;font-size:14px}.spt th{text-align:left;font-weight:500;color:var(--muted);padding:8px 14px 8px 0;width:40%;vertical-align:top;border-bottom:1px solid var(--line)}.spt td{padding:8px 0;border-bottom:1px solid var(--line)}
 </style>
 </head>
 <body>
-<div class="login" id="login" hidden>
-  <form id="lf"><h1>RAAS</h1><p class="mut" style="text-align:center">Admin sign in</p>
-    <input type="email" name="email" placeholder="Email" required autocomplete="username">
-    <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
-    <button class="b" type="submit">Sign in</button><p id="lerr" style="color:#b00020;font-size:13px"></p></form>
+<div class="cur" id="cur"></div>
+<div class="loader" id="loader" aria-hidden="true"><span></span></div>
+
+<div class="announce"><div class="track" id="ann"></div></div>
+
+<header id="hdr">
+  <div class="wrap bar">
+    <button class="menu ico" id="menu" aria-label="Menu" data-t="menu">MENU</button>
+    <a href="#top" class="logo" id="logo">RAAS</a>
+    <nav id="nav">
+      <a href="#top" data-t="navHome">HOME</a><a href="#shop" data-t="navShop">SHOP</a><a href="#about" data-t="navAbout">ABOUT US</a><a href="#contact" data-t="navContact">CONTACT</a>
+    </nav>
+    <div class="tools">
+      <button class="ico" id="sbtn" data-t="search">SEARCH</button>
+      <button class="ico cartbtn" id="cbtn"><span data-t="cart">CART</span><b id="cnt">0</b></button>
+    </div>
+  </div>
+  <div class="search" id="search"><div class="wrap"><input id="q" placeholder="Search clothing" data-tp="searchPlaceholder" aria-label="Search clothing"></div></div>
+</header>
+
+<main id="top">
+  <section class="hero" style="padding:0">
+    <div class="hlayers" id="hlayers"></div>
+    <div class="wrap grid">
+      <div>
+        <h1 id="hTitle"></h1>
+        <p id="hDesc"></p>
+        <div class="ctas"><a class="btn" id="hBtn" href="#shop"><span></span></a><a class="btn line" id="hBtn2" href="#about"><span></span></a></div>
+        <div class="stats" id="hStats"></div>
+      </div>
+      <div class="stage" id="stage">
+        <div class="media" id="media"></div>
+        <div class="vdots" id="vdots"></div>
+      </div>
+    </div>
+    <div class="scroll"></div>
+  </section>
+
+  <div class="ticker"><div class="track" id="tick"></div></div>
+  <div class="sale" id="sale"></div>
+
+  <section class="banner" id="banner" hidden><div class="bmedia" id="bmedia"></div><div class="btxt" id="btxt"></div></section>
+
+  <section id="shop">
+    <div class="wrap">
+      <div class="head rv">
+        <h2 data-t="collectionTitle">All Products</h2>
+        <div class="ctrl">
+          <div class="ctrl" id="cats"></div>
+          <select id="sort" aria-label="Sort">
+            <option value="new" data-t="sortNew">Newest</option><option value="lo" data-t="sortLo">Price: low to high</option><option value="hi" data-t="sortHi">Price: high to low</option>
+          </select>
+          <select id="avail" aria-label="Availability"><option value="" data-t="availAll">All availability</option><option value="in" data-t="availIn">In stock</option></select>
+        </div>
+      </div>
+      <div class="products" id="grid"></div>
+    </div>
+  </section>
+
+  <section class="about" id="about">
+    <div class="wrap"><div class="in">
+      <h2 class="rv" data-t="aboutTitle">About RAAS</h2>
+      <p class="rv" id="aboutTxt"></p>
+      <div class="contact rv" id="contact" style="margin-top:36px"></div>
+    </div></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="fg">
+      <div><div class="logo" id="flogo" style="font-size:26px">RAAS</div><p style="color:#999;margin-top:14px;max-width:260px;font-size:14px" id="fAbout"></p></div>
+      <div><h4 data-t="footShop">SHOP</h4><ul><li><a href="#shop" data-t="collectionTitle">All Products</a></li></ul></div>
+      <div><h4 data-t="footFollow">FOLLOW</h4><ul id="follow"></ul></div>
+      <div><h4 data-t="navContact">CONTACT</h4><ul id="fcontact"></ul></div>
+      <div><h4 data-t="footPolicies">POLICIES</h4><ul><li><a href="#" data-policy="privacy" data-t="privacy">Privacy Policy</a></li><li><a href="#" data-policy="returns" data-t="returns">Return and Exchange Policy</a></li></ul></div>
+    </div>
+    <div class="copy" data-t="copyright">© RAAS. All rights reserved.</div>
+  </div>
+</footer>
+
+<!-- Product page -->
+<div class="pdp" id="pdp" aria-hidden="true">
+  <div class="top"><a class="logo" style="font-size:22px" href="#shop" data-close>RAAS</a><button class="ico" data-close data-t="closeBtn">CLOSE ✕</button></div>
+  <div class="wrap"><div class="pgrid" id="pbody"></div></div>
 </div>
-<div class="shell" id="shell" hidden>
-  <aside id="nav"></aside>
-  <main><div class="top"><h1 id="vt"></h1><span class="mut" id="who"></span></div><div id="view"></div></main>
-</div>
-<div class="modal" id="modal" hidden><div class="mbox" id="mbox"></div></div>
-<div id="toast"></div>
+
+<!-- Cart -->
+<div class="shade" id="shade"></div>
+<aside class="drawer" id="drawer" aria-label="Cart">
+  <div class="dh"><b style="letter-spacing:.14em;font-size:13px" data-t="yourCart">YOUR CART</b><button class="ico" id="cclose" data-t="closeBtn">CLOSE ✕</button></div>
+  <div class="db" id="cbody"></div>
+  <div class="df" id="cfoot"></div>
+</aside>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="../shared/supabase-config.js"></script>
-<script src="../shared/config.js"></script>
-<script src="../shared/raas-extras.js"></script>
+<script src="shared/supabase-config.js"></script>
+<script src="shared/config.js"></script>
 <script>
-const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+/* DATA LAYER: settings come from Supabase table site_config (merged over RAAS_DEFAULTS),
+   products and categories from their tables. Without Supabase keys the page still runs with defaults. */
+const D=window.RAAS_DEFAULTS, sbc=window.RAAS_SUPABASE||{};
+const sb=(sbc.url&&sbc.anonKey&&window.supabase)?window.supabase.createClient(sbc.url,sbc.anonKey):null;
+let CFG=window.RAAS_merge(D,{}),HERO_MEDIA={},SETTINGS={},PRODUCTS=[],CATS=[];
+const T=k=>CFG.text[k]??k;
 const esc=x=>String(x??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const money=n=>"PKR "+Number(n||0).toLocaleString("en-PK");
-const dt=d=>d?new Date(d).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"}):"";
-const toLocal=d=>{const x=new Date(d);return isNaN(x)?"":new Date(x-x.getTimezoneOffset()*6e4).toISOString().slice(0,16)};
-const slug=s=>s.toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-function toast(m,bad){const t=$("#toast");t.textContent=m;t.className="on"+(bad?" bad":"");clearTimeout(toast.t);toast.t=setTimeout(()=>t.className="",3800)}
-const fail=e=>{console.error(e);toast(e&&e.message?e.message:String(e),true)};
-const modal=(h,wide)=>{$("#mbox").className="mbox"+(wide?" wide":"");$("#mbox").innerHTML=h;$("#modal").hidden=false};
-const closeModal=()=>{$("#modal").hidden=true;$("#mbox").innerHTML=""};
-$("#modal").addEventListener("mousedown",e=>{if(e.target.id==="modal")closeModal()});
-
-const cfgS=window.RAAS_SUPABASE||{};
-if(!cfgS.url||!cfgS.anonKey){document.body.innerHTML='<p style="padding:40px;font:16px system-ui">Add your Supabase URL and anon key in <b>shared/supabase-config.js</b> first (see README).</p>';throw new Error("No Supabase config")}
-const sb=supabase.createClient(cfgS.url,cfgS.anonKey);
-let ME=null,S={};
-const V={};
-const NAV=[["dashboard","Dashboard"],["products","Products"],["inventory","Inventory"],["categories","Categories"],["orders","Orders"],["customers","Customers"],["coupons","Coupons & Discounts"],["wallet","Hero Display (video / image)"],["editor","Visual Editor"],["site","Website"],["account","Account"]];
-const STATUSES=["pending","confirmed","processing","shipped","delivered","cancelled"];
-
-async function up(file,folder="uploads"){
-  const ext=(file.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"");
-  const path=`${folder}/${Date.now()}-${Math.random().toString(36).slice(2,8)}.${ext}`;
-  const {error}=await sb.storage.from("media").upload(path,file,{cacheControl:"31536000"});
-  if(error)throw error;
-  return sb.storage.from("media").getPublicUrl(path).data.publicUrl;
+const safeUrl=u=>/^(https?:|mailto:|tel:|#|\/|\.)/i.test(u||"")?u:"#";
+const num=v=>v===""||v==null||isNaN(+v)?null:+v;
+function buildSettings(){
+  const h=CFG.hero,c=CFG.contact,s=CFG.sale;
+  HERO_MEDIA={type:h.mediaType,image:h.image,imageMobile:h.imageMobile,video:h.video,videoMobile:h.videoMobile,poster:h.poster,views:h.views||[],interval:h.viewInterval};
+  SETTINGS={announcements:CFG.announcement.enabled?CFG.announcement.items:[],
+    hero:{title:h.title,desc:h.desc,btn:h.btnText,link:h.btnLink,btn2:h.btn2Text,link2:h.btn2Link,stats:h.stats,image:""},
+    about:CFG.about.text,contact:c,
+    sale:s.enabled&&num(s.percent)?{label:s.label,percent:+s.percent,endsAt:s.endsAt||null}:null,
+    delivery:{charge:num(CFG.delivery.charge),freeAbove:num(CFG.delivery.freeAbove)},
+    categories:[{id:"all",name:T("collectionTitle")},...CATS.map(x=>({id:x.slug,name:esc(x.name)}))],
+    policies:CFG.policies};
 }
-
-/* ---------------- auth ---------------- */
-async function start(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(!session)return showLogin();
-  const {data:a,error}=await sb.from("admins").select("role").eq("user_id",session.user.id).maybeSingle();
-  if(error||!a){await sb.auth.signOut();return showLogin("This account is not an administrator.")}
-  ME={email:session.user.email,role:a.role};
-  $("#login").hidden=true;$("#shell").hidden=false;$("#who").textContent=ME.email+" · "+ME.role;
-  $("#nav").innerHTML='<div class="lg">RAAS</div>'+NAV.filter(n=>!(ME.role!=="owner"&&["site","wallet","editor"].includes(n[0]))).map(n=>`<button data-go="${n[0]}">${n[1]}</button>`).join("")+'<button data-act="logout" style="margin-top:auto">Sign out</button>';
-  go(location.hash.slice(1)||"dashboard");
-}
-function showLogin(msg){$("#shell").hidden=true;$("#login").hidden=false;$("#lerr").textContent=msg||""}
-$("#lf").addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.target);
-  const {error}=await sb.auth.signInWithPassword({email:f.get("email"),password:f.get("password")});
-  if(error)return $("#lerr").textContent=error.message;start()});
-async function go(n){
-  if(!V[n])n="dashboard";
-  location.hash=n;S.cur=n;
-  $$("#nav [data-go]").forEach(b=>b.classList.toggle("on",b.dataset.go===n));
-  $("#vt").textContent=(NAV.find(x=>x[0]===n)||[])[1]||"";
-  $("#view").innerHTML='<p class="mut">Loading…</p>';
-  try{await V[n]()}catch(e){fail(e);$("#view").innerHTML='<p class="mut">Could not load this page. Check the Supabase setup.</p>'}
-}
-document.addEventListener("click",async e=>{
-  const g=e.target.closest("[data-go]");if(g)return go(g.dataset.go);
-  const a=e.target.closest("[data-act]");if(!a)return;
-  const fn=ACT[a.dataset.act];if(fn){try{await fn(a,e)}catch(x){fail(x)}}
-});
-document.addEventListener("change",async e=>{
-  const t=e.target;if(!t.dataset.chg)return;
-  try{await CHG[t.dataset.chg](t,e)}catch(x){fail(x)}
-});
-const ACT={},CHG={};
-ACT.logout=async()=>{await sb.auth.signOut();location.hash="";start()};
-ACT.close=closeModal;
-
-/* ---------------- dashboard ---------------- */
-V.dashboard=async()=>{
-  const [pr,or,hi]=await Promise.all([
-    sb.from("products").select("id,active,product_colours(stock)"),
-    sb.from("orders").select("number,customer_name,total,status,created_at").order("created_at",{ascending:false}).limit(1000),
-    sb.from("order_history").select("status,note,at,orders(number)").order("at",{ascending:false}).limit(8)]);
-  [pr,or,hi].forEach(r=>{if(r.error)throw r.error});
-  const P=pr.data,O=or.data,H=hi.data,cnt=s=>O.filter(o=>o.status===s).length;
-  const sales=O.filter(o=>o.status!=="cancelled").reduce((a,o)=>a+ +o.total,0);
-  const out=P.filter(p=>!p.product_colours.some(c=>c.stock>0)).length;
-  const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-6+i);return d});
-  const vals=days.map(d=>{const n=new Date(d);n.setDate(n.getDate()+1);return O.filter(o=>o.status!=="cancelled"&&new Date(o.created_at)>=d&&new Date(o.created_at)<n).reduce((a,o)=>a+ +o.total,0)});
-  const mx=Math.max(...vals,1),card=(l,v)=>`<div class="card"><small>${l}</small><b>${v}</b></div>`;
-  $("#view").innerHTML=`<div class="cards">${card("Total products",P.length)}${card("Active products",P.filter(p=>p.active).length)}${card("Out of stock",out)}${card("Total orders",O.length)}
-    ${STATUSES.map(s=>card(s[0].toUpperCase()+s.slice(1),cnt(s))).join("")}${card("Total sales",money(sales))}</div>
-    <div class="grid2"><div class="panel"><h3>Sales, last 7 days</h3><div class="bars">${vals.map((v,i)=>`<div title="${money(v)}"><i style="height:${v/mx*100}%"></i>${days[i].toLocaleDateString("en-GB",{weekday:"short"})}</div>`).join("")}</div></div>
-    <div class="panel"><h3>Orders by status</h3>${STATUSES.map(s=>`<div style="display:flex;gap:8px;align-items:center;margin:6px 0"><span style="width:90px">${s}</span><i style="display:block;height:10px;background:#000;width:${cnt(s)/Math.max(O.length,1)*100}%;min-width:2px"></i>${cnt(s)}</div>`).join("")}</div></div>
-    <div class="grid2"><div class="panel"><h3>Recent orders</h3>${O.slice(0,6).map(o=>`<p>#${o.number} · ${esc(o.customer_name)} · ${money(o.total)} <span class="tag ${o.status}">${o.status}</span></p>`).join("")||'<p class="mut">No orders yet.</p>'}</div>
-    <div class="panel"><h3>Recent activity</h3>${H.map(h=>`<p>Order #${h.orders?h.orders.number:"?"} → ${h.status} <span class="mut">${dt(h.at)}</span></p>`).join("")||'<p class="mut">Nothing yet.</p>'}</div></div>`;
+const SIZE_LIST=[["XS","Extra Small"],["S","Small"],["M","Medium"],["L","Large"],["XL","Extra Large"],["XXL","Double Extra Large"],["XXXL","Triple Extra Large"]];
+const sizeName=c=>{const x=SIZE_LIST.find(z=>z[0]===String(c||"").toUpperCase());return x?x[1]+" ("+x[0]+")":esc(c||"")};
+const mapProduct=p=>{
+  let cols=(p.product_colours||[]).sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:esc(c.name),hex:/^#[0-9a-f]{3,8}$/i.test(c.hex)?c.hex:"#141414",inStock:c.stock>0,stock:c.stock,images:p.image?[p.image]:(c.images||[]).slice(0,1)}));
+  if(!cols.length)cols=[{id:null,name:"Default",hex:"#141414",inStock:false,images:[]}];
+  return {id:p.id,name:esc(p.name),category:p.categories?p.categories.slug:"",description:esc(p.description),price:num(p.price),salePrice:(num(p.sale_price)!=null&&num(p.price)!=null&&+p.sale_price<+p.price)?+p.sale_price:null,sku:esc(p.sku||""),sizes:SIZE_LIST.map(z=>z[0]).filter(c=>(p.sizes||[]).includes(c)),image:p.image||"",featured:p.featured,video:p.video_url,
+    specs:(p.specs||[]).filter(x=>x&&String(x.k||"").trim()&&String(x.v||"").trim()).map(x=>({k:esc(x.k),v:esc(x.v)})),
+    discount:p.discount_value!=null?{type:p.discount_type,value:+p.discount_value,startsAt:p.discount_start,endsAt:p.discount_end}:null,colours:cols};
 };
-
-/* ---------------- Wallets section ON/OFF (no code changes needed) ---------------- */
-const walletsCat=()=>(S.cats||[]).find(c=>c.slug==="wallets");
-function walletSwitch(){const w=walletsCat();
-  return `<div class="wsw"><label class="tg" style="margin:0"><input type="checkbox" data-chg="walletsw" ${w&&w.active?"checked":""}> <b>Wallets section on the website</b></label><span class="mut">${w&&w.active?"ON – visitors can see the Wallets category.":"OFF – the Wallets category and its products are hidden from the public website."}</span></div>`}
-CHG.walletsw=async t=>{
-  const on=t.checked,w=walletsCat();
-  const r=w?await sb.from("categories").update({active:on}).eq("id",w.id):await sb.from("categories").insert({slug:"wallets",name:"Wallets",sort:2,active:on});
-  if(r.error){t.checked=!on;throw r.error}
-  const c=await sb.from("categories").select("*").order("sort");if(!c.error)S.cats=c.data;
-  toast(on?"Wallets section is now ON":"Wallets section is now OFF");
-  const sp=t.closest(".wsw").querySelector(".mut");sp.textContent=on?"ON – visitors can see the Wallets category.":"OFF – the Wallets category and its products are hidden from the public website."};
-
-/* ---------------- products ---------------- */
-V.products=async()=>{
-  const [p,c]=await Promise.all([sb.from("products").select("*,product_colours(*),categories(name)").order("created_at",{ascending:false}),sb.from("categories").select("*").order("sort")]);
-  if(p.error)throw p.error;if(c.error)throw c.error;
-  S.prods=p.data;S.cats=c.data;
-  $("#view").innerHTML=walletSwitch()+`<div class="bar"><input id="pq" placeholder="Search products" data-chg="plist"><select id="pf" data-chg="plist"><option value="">All</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="featured">Featured</option><option value="out">Out of stock</option></select><button class="b" data-act="newprod">+ Add product</button></div><div class="tw" id="plist"></div>`;
-  $("#pq").addEventListener("input",drawProds);drawProds();
-};
-CHG.plist=()=>drawProds();
-function drawProds(){
-  const q=($("#pq").value||"").toLowerCase(),f=$("#pf").value;
-  const rows=S.prods.filter(p=>p.name.toLowerCase().includes(q)&&(!f||(f==="active"?p.active:f==="inactive"?!p.active:f==="featured"?p.featured:!p.product_colours.some(c=>c.stock>0))));
-  $("#plist").innerHTML=`<table><tr><th></th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Active</th><th>Featured</th><th></th></tr>${rows.map(p=>{
-    const cs=[...p.product_colours].sort((a,b)=>a.sort-b.sort),img=p.image||(cs[0]&&cs[0].images[0]),st=cs.reduce((a,c)=>a+c.stock,0);
-    return `<tr><td>${img?`<img class="th" src="${esc(img)}">`:'<div class="th"></div>'}</td><td><b>${esc(p.name)}</b><br><span class="mut">${cs.length} colour${cs.length===1?"":"s"}</span></td><td>${esc(p.categories?p.categories.name:"—")}</td>
-    <td>${discCell(p)}</td>
-    <td>${st}</td><td><input type="checkbox" ${p.active?"checked":""} data-chg="ptoggle" data-id="${p.id}" data-f="active"></td><td><input type="checkbox" ${p.featured?"checked":""} data-chg="ptoggle" data-id="${p.id}" data-f="featured"></td>
-    <td style="white-space:nowrap"><button class="b o s" data-act="editprod" data-id="${p.id}">Edit</button> <button class="b o s" data-act="dupprod" data-id="${p.id}">Duplicate</button> ${p.discount_value!=null?`<button class="b o s" data-act="rmdiscrow" data-id="${p.id}">Remove discount</button> `:""}<button class="b d s" data-act="delprod" data-id="${p.id}">Delete</button></td></tr>`}).join("")||'<tr><td colspan="8" class="mut">No products yet. Click "Add product".</td></tr>'}</table>`;
-}
-CHG.ptoggle=async t=>{const {error}=await sb.from("products").update({[t.dataset.f]:t.checked}).eq("id",t.dataset.id);if(error){t.checked=!t.checked;throw error}
-  S.prods.find(p=>p.id===t.dataset.id)[t.dataset.f]=t.checked;toast("Saved")};
-ACT.newprod=()=>prodForm(null);
-ACT.editprod=a=>prodForm(a.dataset.id);
-ACT.delprod=async a=>{if(!confirm("Delete this product and all its colours? This cannot be undone."))return;
-  const {error}=await sb.from("products").delete().eq("id",a.dataset.id);if(error)throw error;toast("Deleted");V.products()};
-ACT.dupprod=async a=>{
-  const p=S.prods.find(x=>x.id===a.dataset.id),{id,created_at,categories,product_colours,...row}=p;
-  const r=await sb.from("products").insert({...row,name:p.name+" (copy)",active:false,featured:false}).select("id").single();if(r.error)throw r.error;
-  if(product_colours.length){const x=await sb.from("product_colours").insert(product_colours.map(({id,product_id,...c})=>({...c,stock:0,product_id:r.data.id})));if(x.error)throw x.error}
-  toast("Duplicated as an inactive draft with zero stock");V.products()};
-function prodForm(id){
-  const p=id?S.prods.find(x=>x.id===id):{name:"",description:"",price:null,sale_price:null,sku:"",image:"",active:true,featured:false,specs:[],product_colours:[],category_id:((S.cats.find(c=>c.slug==="clothing")||{}).id)||""};
-  S.E={id,del:[],image:p.image||(p.product_colours&&[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>(c.images||[])[0]).find(Boolean))||"",sizes:SIZES.map(z=>z[0]).filter(c=>(p.sizes||[]).includes(c)),specs:(p.specs&&p.specs.length?p.specs:(id?[]:SPEC_PRESETS.map(k=>({k,v:""})))).map(x=>({k:x.k,v:x.v})),cols:[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:c.name,hex:c.hex,stock:c.stock,images:[...(c.images||[])]}))};
-  if(!S.E.cols.length)S.E.cols.push({name:"",hex:"",stock:0,images:[]});
-  S.E.cols.forEach(c=>c.images=[]);   // colours no longer carry photos: one main image per product
-  const L=(t,h)=>`<label class="f"><span>${t}</span>${h}</label>`;
-  modal(`<h2>${id?"Edit product":"New product"}</h2>
-   ${L("Name",`<input id="pn" value="${esc(p.name)}">`)}
-   <div class="r2">${L("Product category",`<select id="pcat"><option value="">— none —</option>${S.cats.map(c=>`<option value="${c.id}" ${p.category_id===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`)}
-   ${L("Original price (PKR, per piece)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
-   <div class="r2">${L("Discounted / sale price (PKR, per piece, optional)",`<input id="psale" type="number" min="0" value="${p.sale_price??""}" placeholder="leave empty for no discount">`)}${L("SKU (optional)",`<input id="psku" value="${esc(p.sku||"")}">`)}</div>
-   <div class="f"><span>Main product image (only one needed)</span><div class="mainimg"><div id="mimg"></div><label class="b o s">Upload image<input type="file" accept="image/*" hidden data-chg="mimgup"></label></div></div>
-   ${L("Description",`<textarea id="pdesc" rows="3">${esc(p.description)}</textarea>`)}
-   <div id="pdbox"><h3 style="margin-bottom:8px">Scheduled / percentage discount <span class="mut" style="font-weight:400">(optional, the discounted price above wins if both are set)</span></h3>
-    <label class="tg"><input type="checkbox" id="pden" ${p.discount_value!=null?"checked":""}> Discount enabled</label>
-    <div class="r2">${L("Type",`<select id="pdt"><option value="percent" ${p.discount_type!=="fixed"?"selected":""}>Percentage (%)</option><option value="fixed" ${p.discount_type==="fixed"?"selected":""}>Fixed amount (PKR)</option></select>`)}
-    ${L("Discount value",`<input id="pdv" type="number" min="0" value="${p.discount_value??""}">`)}</div>
-    <div class="r2">${L("Starts (optional)",`<input id="pds" type="datetime-local" value="${p.discount_start?toLocal(p.discount_start):""}">`)}${L("Ends (optional)",`<input id="pde" type="datetime-local" value="${p.discount_end?toLocal(p.discount_end):""}">`)}</div>
-    <p id="pcalc" style="margin:4px 0 10px"></p><button class="b d s" data-act="rmdisc" type="button">Remove discount</button></div>
-   <h3 style="margin:8px 0">Product details / specifications <span class="mut" style="font-weight:400">(add, rename or remove any field; empty values are not shown)</span></h3>
-   <div id="specs"></div><div class="mrow"><button class="b o s" type="button" data-act="addspec">+ Add field</button>
-   <select id="spreset" data-chg="specpreset"><option value="">+ Add a common field…</option>${SPEC_PRESETS.map(k=>`<option>${k}</option>`).join("")}</select></div>
-   ${L("Product video (URL or upload)",`<div class="cp"><input id="pvid" value="${esc(p.video_url||"")}" placeholder="https://..."><label class="b o s" style="display:grid;place-items:center;white-space:nowrap">Upload<input type="file" accept="video/*" hidden data-chg="pvup"></label></div>`)}
-   <label class="f"><span>Product status</span><select id="pact"><option value="1" ${p.active?"selected":""}>Active (visible on the website)</option><option value="0" ${!p.active?"selected":""}>Inactive (hidden)</option></select></label>
-   <div class="tg"><label><input type="checkbox" id="pfeat" ${p.featured?"checked":""}> Featured</label></div>
-   <h3 style="margin:8px 0">Available Sizes <span class="mut" style="font-weight:400">(tick every size this product comes in; only ticked sizes appear on the product page. Leave all unticked if this product has no sizes)</span></h3>
-   <div class="szs" id="szs"></div>
-   <div class="mrow" style="margin-bottom:14px"><button class="b o s" type="button" data-act="szall">Select all</button><button class="b o s" type="button" data-act="szclear">Clear</button></div>
-   <h3 style="margin:8px 0">Colours and stock <span class="mut" style="font-weight:400">(add as many colours as you need; each has its own swatch and stock. With 2 or more colours the customer must pick one; with only one colour it is chosen automatically. Total stock: <b id="tstock">0</b>)</span></h3>
-   <div id="cols"></div><button class="b o s" data-act="addcol">+ Add colour</button>
-   <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="saveprod">Save product</button></div>`,true);
-  drawCols();drawSpecs();drawMain();drawSizes();calcDisc();
-}
-CHG.pvup=async t=>{if(!t.files[0])return;toast("Uploading video…");$("#pvid").value=await up(t.files[0],"video");toast("Video uploaded")};
-/* HEX colour codes: "#000080", "000080", "#fff" are accepted and saved as "#000080" / "#FFFFFF" */
-const normHex=v=>{let h=String(v||"").trim().replace(/^#/,"");if(!/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(h))return null;if(h.length===3)h=h.replace(/./g,"$&$&");return "#"+h.toUpperCase()};
-const HEX_MSG="Enter a valid HEX code, e.g. #000080, #FFFFFF or #FF5733";
-/* updates one colour's swatch the moment its HEX code changes. strict=true also flags incomplete codes (on leaving the field / saving) */
-function paintHex(i,strict){
-  const c=S.E.cols[i],inp=$(`#cols input[data-ci="${i}"][data-cf="hex"]`),sw=$("#sw-"+i),er=$("#he-"+i);if(!inp||!sw)return;
-  const v=String(c.hex||"").trim(),n=normHex(v),typing=!strict&&/^#?[0-9a-f]{0,5}$/i.test(v);
-  sw.style.backgroundColor=n||"";sw.classList.toggle("empty",!n);sw.title=n||"No valid colour yet";
-  const bad=!n&&!(typing||(!strict&&!v));inp.classList.toggle("bad",bad);er.hidden=!bad;
-}
-function drawCols(){
-  $("#cols").innerHTML=S.E.cols.map((c,i)=>`<div class="colb" data-i="${i}"><div class="h"><input data-ci="${i}" data-cf="name" placeholder="Colour name (e.g. Navy Blue)" value="${esc(c.name)}" aria-label="Colour name">
-    <div class="hexf"><i class="swatch" id="sw-${i}" aria-hidden="true"></i><input data-ci="${i}" data-cf="hex" value="${esc(normHex(c.hex)||c.hex||"")}" placeholder="HEX e.g. #000080" maxlength="7" spellcheck="false" autocomplete="off" aria-label="HEX colour code"></div>
-    <input type="number" min="0" data-ci="${i}" data-cf="stock" placeholder="Stock" value="${c.stock}" aria-label="Stock"><button class="b d s" type="button" data-act="delcol" data-i="${i}">Remove</button></div><p class="hexerr" id="he-${i}" hidden>${HEX_MSG}</p></div>`).join("");
-  S.E.cols.forEach((_,i)=>paintHex(i));
-  const t=$("#tstock");if(t)t.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0);
-}
-function drawSpecs(){
-  $("#specs").innerHTML=S.E.specs.map((x,i)=>`<div class="specrow"><input data-si="${i}" data-sf="k" placeholder="Field (e.g. Fabric)" value="${esc(x.k)}"><input data-si="${i}" data-sf="v" placeholder="Value" value="${esc(x.v)}"><button class="b d s" type="button" data-act="delspec" data-i="${i}">✕</button></div>`).join("")||'<p class="mut">No fields yet.</p>';
-}
-function drawSizes(){
-  const el=$("#szs");if(!el)return;
-  el.innerHTML=SIZES.map(([c,n])=>{const on=S.E.sizes.includes(c);return `<label class="${on?"on":""}"><input type="checkbox" data-chg="sizetog" value="${c}" ${on?"checked":""}><b>${c}</b><span>${n}</span></label>`}).join("");
-}
-CHG.sizetog=t=>{const set=new Set(S.E.sizes);t.checked?set.add(t.value):set.delete(t.value);S.E.sizes=SIZES.map(z=>z[0]).filter(c=>set.has(c));drawSizes()};
-ACT.szall=()=>{S.E.sizes=SIZES.map(z=>z[0]);drawSizes()};
-ACT.szclear=()=>{S.E.sizes=[];drawSizes()};
-function drawMain(){$("#mimg").innerHTML=S.E.image?`<div class="im"><img src="${esc(S.E.image)}"><button class="x" type="button" data-act="rmmain">✕</button></div>`:'<div class="mut">No image yet</div>'}
-/* sizes the admin can enable per product (code stored in the database -> full name shown everywhere) */
-const SIZES=[["XS","Extra Small"],["S","Small"],["M","Medium"],["L","Large"],["XL","Extra Large"],["XXL","Double Extra Large"],["XXXL","Triple Extra Large"]];
-const sizeName=c=>{const x=SIZES.find(z=>z[0]===String(c||"").toUpperCase());return x?`${x[1]} (${x[0]})`:(c?String(c):"")};
-const SPEC_PRESETS=["Fabric","Material","Fit Type","Style","Sleeve Type","Neck Type","Pattern","Occasion","Season","Care Instructions","Additional Information"];
-ACT.addspec=()=>{S.E.specs.push({k:"",v:""});drawSpecs();const i=$$("#specs .specrow input");i[i.length-2]&&i[i.length-2].focus()};
-ACT.delspec=a=>{S.E.specs.splice(+a.dataset.i,1);drawSpecs()};
-CHG.specpreset=t=>{if(t.value){S.E.specs.push({k:t.value,v:""});drawSpecs();t.value=""}};
-ACT.rmmain=()=>{S.E.image="";drawMain()};
-CHG.mimgup=async t=>{if(!t.files[0])return;toast("Uploading…");S.E.image=await up(t.files[0],"products");drawMain();toast("Image uploaded")};
-$("#mbox").addEventListener("input",e=>{const t=e.target;if(t.dataset.ci!=null){const c=S.E.cols[+t.dataset.ci];c[t.dataset.cf]=t.dataset.cf==="stock"?Math.max(0,parseInt(t.value)||0):t.value;if(t.dataset.cf==="hex")paintHex(+t.dataset.ci);const ts=$("#tstock");if(ts)ts.textContent=S.E.cols.reduce((a,c)=>a+(+c.stock||0),0)}
-  if(t.dataset.si!=null)S.E.specs[+t.dataset.si][t.dataset.sf]=t.value;});
-/* leaving a HEX field: tidy it up (#fff -> #FFFFFF, 000080 -> #000080) or show the error */
-$("#mbox").addEventListener("focusout",e=>{const t=e.target;if(t.dataset&&t.dataset.cf==="hex"&&S.E&&S.E.cols){const i=+t.dataset.ci,n=normHex(t.value);if(n&&t.value!==n){t.value=n;S.E.cols[i].hex=n}paintHex(i,!!t.value.trim())}});
-ACT.addcol=()=>{S.E.cols.push({name:"",hex:"",stock:0,images:[]});drawCols();const n=$$("#cols .colb input[data-cf=name]");n.length&&n[n.length-1].focus()};
-ACT.delcol=a=>{const c=S.E.cols[+a.dataset.i];if(S.E.cols.length<2)throw new Error("A product needs at least one colour");if(c.id)S.E.del.push(c.id);S.E.cols.splice(+a.dataset.i,1);drawCols()};
-ACT.saveprod=async a=>{
-  a.disabled=true;
+async function loadData(){
+  if(!sb)return;
   try{
-    const v=i=>$("#"+i).value,dtp=$("#pden").checked?v("pdt"):"";
-    const row={name:v("pn").trim(),category_id:v("pcat")||null,description:v("pdesc"),price:v("pprice")===""?null:+v("pprice"),sale_price:v("psale")===""?null:+v("psale"),sku:v("psku").trim()||null,image:S.E.image||null,
-      discount_type:dtp||null,discount_value:dtp&&v("pdv")!==""?+v("pdv"):null,discount_start:dtp&&v("pds")?new Date(v("pds")).toISOString():null,discount_end:dtp&&v("pde")?new Date(v("pde")).toISOString():null,
-      featured:$("#pfeat").checked,active:v("pact")==="1",video_url:v("pvid").trim()||null,
-      specs:S.E.specs.map(x=>({k:x.k.trim(),v:x.v.trim()})).filter(x=>x.k&&x.v),
-      sizes:SIZES.map(z=>z[0]).filter(c=>S.E.sizes.includes(c))};
-    if(!row.name)throw new Error("Product name is required");
-    const badHex=S.E.cols.findIndex(c=>!normHex(c.hex));
-    if(badHex>-1){paintHex(badHex,true);const f=$(`#cols input[data-ci="${badHex}"][data-cf="hex"]`);f&&f.focus();
-      throw new Error(`Colour ${badHex+1}${S.E.cols[badHex].name.trim()?" ("+S.E.cols[badHex].name.trim()+")":""}: ${HEX_MSG}`)}
-    if(row.sale_price!=null){if(row.price==null)throw new Error("Enter the original price before a discounted price");if(!(row.sale_price<row.price))throw new Error("The discounted price must be lower than the original price")}
-    if(dtp){if(row.price==null)throw new Error("Enter the original price before adding a discount");const dv=row.discount_value;
-      if(!(dv>0))throw new Error("Enter a discount value above zero, or switch the discount off");
-      if(dtp==="percent"&&dv>99)throw new Error("A percentage discount must be between 1 and 99");
-      if(dtp==="fixed"&&(!Number.isInteger(dv)||dv>=row.price))throw new Error("A fixed discount must be a whole number smaller than the price");
-      if(row.discount_start&&row.discount_end&&row.discount_end<=row.discount_start)throw new Error("The discount end date must be after the start date")}
-    let id=S.E.id;
-    if(id){const r=await sb.from("products").update(row).eq("id",id);if(r.error)throw r.error}
-    else{const r=await sb.from("products").insert(row).select("id").single();if(r.error)throw r.error;id=r.data.id}
-    if(S.E.del.length){const r=await sb.from("product_colours").delete().in("id",S.E.del);if(r.error)throw r.error}
-    const upd=[],ins=[];
-    S.E.cols.forEach((c,i)=>{const r={name:c.name.trim()||"Colour "+(i+1),hex:normHex(c.hex),stock:Math.max(0,parseInt(c.stock)||0),images:[],sort:i,product_id:id};c.id?upd.push({...r,id:c.id}):ins.push(r)});
-    if(upd.length){const r=await sb.from("product_colours").upsert(upd);if(r.error)throw r.error}
-    if(ins.length){const r=await sb.from("product_colours").insert(ins);if(r.error)throw r.error}
-    closeModal();toast("Product saved. It is live on the website.");V.products();
-  }finally{a.disabled=false}
-};
+    const [c,cats,pr]=await Promise.all([
+      sb.from("site_config").select("data").eq("id","main").maybeSingle(),
+      sb.from("categories").select("*").eq("active",true).order("sort"),
+      sb.from("products").select("*, product_colours(*), categories(slug)").eq("active",true).order("sort")]);
+    if(c.data&&c.data.data)CFG=window.RAAS_merge(D,c.data.data);
+    CATS=cats.data||[]; const live=new Set(CATS.map(x=>x.slug)); PRODUCTS=(pr.data||[]).map(mapProduct).filter(p=>p.category&&live.has(p.category));
+  }catch(e){console.warn("RAAS: could not load store data",e)}
+}
 
-/* ---------------- inventory ---------------- */
-V.inventory=async()=>{
-  const r=await sb.from("product_colours").select("id,name,hex,stock,products(name)").order("stock");if(r.error)throw r.error;
-  S.inv=r.data;
-  $("#view").innerHTML=`<div class="bar"><select id="invf" data-chg="invlist"><option value="">All</option><option value="low">Low stock (5 or fewer)</option><option value="out">Out of stock</option></select></div><div class="tw" id="invl"></div>`;drawInv();
-};
-CHG.invlist=()=>drawInv();
-function drawInv(){
-  const f=$("#invf").value,rows=S.inv.filter(c=>!f||(f==="out"?c.stock===0:c.stock<=5));
-  $("#invl").innerHTML=`<table><tr><th>Product</th><th>Colour</th><th>Available</th><th>Change stock</th></tr>${rows.map(c=>`<tr><td>${esc(c.products?c.products.name:"")}</td><td><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${esc(c.hex)};border:1px solid #ccc"></i> ${esc(c.name)}</td>
-   <td><b>${c.stock}</b> ${c.stock===0?'<span class="tag cancelled">out</span>':c.stock<=5?'<span class="tag pending">low</span>':""}</td>
-   <td style="white-space:nowrap"><input type="number" id="sd-${c.id}" value="1" min="1" style="width:70px;display:inline-block"> <button class="b o s" data-act="stk" data-id="${c.id}" data-d="1">Add</button> <button class="b o s" data-act="stk" data-id="${c.id}" data-d="-1">Reduce</button> <button class="b o s" data-act="stkset" data-id="${c.id}">Set to</button></td></tr>`).join("")||'<tr><td colspan="4" class="mut">Nothing here.</td></tr>'}</table>`;
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const money=n=>n==null?T("priceTbd"):"PKR "+Number(n).toLocaleString("en-PK");
+/* Discounts: product discount (percent or fixed, optional start/end) wins over the store-wide sale. */
+function disc(p){
+  const now=Date.now(),d=p.discount,s=SETTINGS.sale;
+  if(d&&(!d.startsAt||Date.parse(d.startsAt)<=now)&&(!d.endsAt||Date.parse(d.endsAt)>now))return d.type==="fixed"?{pct:0,fix:d.value,end:d.endsAt}:{pct:d.value,fix:0,end:d.endsAt};
+  if(s&&s.percent&&(!s.endsAt||Date.parse(s.endsAt)>now))return {pct:s.percent,fix:0,end:s.endsAt};
+  return {pct:0,fix:0,end:null};
 }
-async function setStock(id,val){if(val<0)throw new Error("Stock cannot go below zero");const r=await sb.from("product_colours").update({stock:val}).eq("id",id);if(r.error)throw r.error;S.inv.find(c=>c.id===id).stock=val;drawInv();toast("Stock updated")}
-ACT.stk=a=>{const c=S.inv.find(x=>x.id===a.dataset.id),n=Math.max(1,parseInt($("#sd-"+c.id).value)||1);return setStock(c.id,c.stock+n*+a.dataset.d)};
-ACT.stkset=a=>setStock(a.dataset.id,Math.max(0,parseInt($("#sd-"+a.dataset.id).value)||0));
+const eff=p=>{if(p.price==null)return null;if(p.salePrice!=null)return p.salePrice;const d=disc(p);return Math.max(0,Math.round(p.price*(1-d.pct/100)-d.fix))};
+const off=p=>{const d=disc(p);if(p.price==null)return d.pct?T("pctOff").replace("{n}",d.pct):"";const e=eff(p);return e<p.price?(d.pct?T("pctOff").replace("{n}",d.pct):T("saveAmt").replace("{n}",p.price-e)):""};
+const priceHTML=p=>{const e=eff(p);return p.price!=null&&e<p.price?`${money(e)}<s>${money(p.price)}</s>`:money(p.price)};
+const cdnHTML=end=>`<div class="cdn" data-end="${end}">${[T("days"),T("hours"),T("min"),T("sec")].map(x=>`<div><b>00</b><small>${x}</small></div>`).join("")}</div>`;
+function tick(){
+  $$(".cdn").forEach(c=>{
+    const t=Math.max(0,Date.parse(c.dataset.end)-Date.now())/1000|0,v=[t/86400|0,t%86400/3600|0,t%3600/60|0,t%60];
+    c.querySelectorAll("b").forEach((b,i)=>{const s=String(v[i]).padStart(2,"0");if(b.textContent!==s){b.textContent=s;b.classList.remove("flip");void b.offsetWidth;b.classList.add("flip")}});
+  });
+}
+function drawSale(){
+  const s=SETTINGS.sale,el=$("#sale");
+  if(!s||!s.percent||(s.endsAt&&Date.parse(s.endsAt)<=Date.now())){el.classList.remove("on");el.innerHTML="";return}
+  el.classList.add("on");
+  el.innerHTML=`<div class="wrap"><h3>${esc(s.label)}: ${esc(T("saleLine")).replace("{n}",s.percent)}</h3>${s.endsAt?cdnHTML(s.endsAt):""}<a class="btn" href="#shop"><span>${T("shopSale")}</span></a></div>`;
+  tick();
+}
+setInterval(tick,1000);
+const hero3d=()=>garment(CFG.look&&CFG.look.accent||"#d8c9ae",CFG.hero.sampleText);
+const hero3d_old=()=>`<div class="wl"><i class="wf bk"></i><i class="wf sl"></i><i class="wf sr"></i><i class="wf sb"></i><i class="kd k1"></i><i class="kd k2"></i><i class="kd k3"></i><i class="wf fr"><b>${esc(CFG.hero.sampleText)}</b></i></div>`;
 
-/* ---------------- categories ---------------- */
-V.categories=async()=>{
-  const r=await sb.from("categories").select("*").order("sort");if(r.error)throw r.error;S.cats=r.data;
-  $("#view").innerHTML=walletSwitch()+`<div class="bar"><button class="b" data-act="newcat">+ Add category</button></div><div class="tw"><table><tr><th></th><th>Name</th><th>Order</th><th>Visible</th><th></th></tr>${r.data.map(c=>`<tr><td>${c.image?`<img class="th" src="${esc(c.image)}">`:'<div class="th"></div>'}</td><td><b>${esc(c.name)}</b><br><span class="mut">${esc(c.slug)}</span></td><td>${c.sort}</td><td>${c.active?"Yes":"Hidden"}</td><td><button class="b o s" data-act="editcat" data-id="${c.id}">Edit</button> <button class="b d s" data-act="delcat" data-id="${c.id}">Delete</button></td></tr>`).join("")}</table></div>`;
-};
-ACT.newcat=()=>catForm(null);ACT.editcat=a=>catForm(a.dataset.id);
-function catForm(id){
-  const c=id?S.cats.find(x=>x.id===id):{name:"",slug:"",image:"",sort:S.cats.length+1,active:true};S.E={id};
-  modal(`<h2>${id?"Edit":"New"} category</h2><label class="f"><span>Name</span><input id="cn" value="${esc(c.name)}"></label>
-   <label class="f"><span>Image</span><div class="cp"><input id="ci" value="${esc(c.image||"")}"><label class="b o s" style="display:grid;place-items:center">Upload<input type="file" accept="image/*" hidden data-chg="catup"></label></div></label>
-   <div class="r2"><label class="f"><span>Order</span><input id="cs" type="number" value="${c.sort}"></label><label class="tg" style="margin-top:22px"><input type="checkbox" id="ca" ${c.active?"checked":""}> Visible</label></div>
-   <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="savecat">Save</button></div>`);
-}
-CHG.catup=async t=>{if(t.files[0]){$("#ci").value=await up(t.files[0],"categories");toast("Uploaded")}};
-ACT.savecat=async()=>{
-  const name=$("#cn").value.trim();if(!name)throw new Error("Name is required");
-  const row={name,image:$("#ci").value||null,sort:+$("#cs").value||0,active:$("#ca").checked};
-  const r=S.E.id?await sb.from("categories").update(row).eq("id",S.E.id):await sb.from("categories").insert({...row,slug:slug(name)||"cat-"+Date.now()});
-  if(r.error)throw r.error;closeModal();toast("Saved");V.categories()};
-ACT.delcat=async a=>{if(!confirm("Delete this category? Its products are kept and become uncategorised."))return;
-  const r=await sb.from("categories").delete().eq("id",a.dataset.id);if(r.error)throw r.error;toast("Deleted");V.categories()};
+/* Placeholder garment drawing (used until a real product photo is uploaded) */
+function garment(hex,label,bg){
+  const f=okHex(hex)?hex:"#141414",d=shade(f,-22),l=shade(f,12);
+  const tee=`<g transform="translate(200 205)"><path d="M-60-122 L-125-92 L-98-40 L-72-54 L-72 122 Q0 134 72 122 L72-54 L98-40 L125-92 L60-122 Q0-96-60-122Z" fill="${f}"/>
+   <path d="M-60-122 Q0-96 60-122 Q0-78-60-122Z" fill="${d}"/><path d="M-72-54 L-72 122 L-60 124 L-60-50Z" fill="${l}" opacity=".35"/>
+   ${label?`<text x="0" y="12" text-anchor="middle" font-family="Georgia,serif" font-size="20" letter-spacing="6" fill="#fff" fill-opacity=".8">${esc(label)}</text>`:""}</g>`;
+  return `<svg class="garment" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid ${bg?"slice":"meet"}">${bg?`<rect width="400" height="400" fill="${bg}"/>`:""}<ellipse cx="200" cy="345" rx="95" ry="10" fill="#000" opacity=".15"/>${tee}</svg>`}
+function shade(h,p){const n=parseInt(h.slice(1),16),f=v=>Math.max(0,Math.min(255,v+p*2.55|0));return "#"+((1<<24)+(f(n>>16)<<16)+(f(n>>8&255)<<8)+f(n&255)).toString(16).slice(1)}
+const frameHTML=(img,i,hex)=>img?`<img src="${img}" alt="" loading="lazy">`:garment(hex,CFG.hero.sampleText,"#1d1c19");
+function frames(col){return col.images&&col.images.length?col.images:[null]}   // one main image per product
 
-/* ---------------- orders ---------------- */
-V.orders=async()=>{
-  const r=await sb.from("orders").select("*").order("created_at",{ascending:false}).limit(1000);if(r.error)throw r.error;S.orders=r.data;
-  $("#view").innerHTML=`<div class="bar"><input id="oq" placeholder="Search number, name, phone"><select id="os" data-chg="olist"><option value="">All statuses</option>${STATUSES.map(s=>`<option>${s}</option>`).join("")}</select><button class="b o" data-act="exportorders">Export CSV</button></div><div class="tw" id="olist"></div>`;
-  $("#oq").addEventListener("input",drawOrders);drawOrders();
-};
-CHG.olist=()=>drawOrders();
-const ofilter=()=>{const q=($("#oq").value||"").toLowerCase(),s=$("#os").value;return S.orders.filter(o=>(!s||o.status===s)&&(`${o.number} ${o.customer_name} ${o.phone}`.toLowerCase().includes(q)))};
-function drawOrders(){
-  $("#olist").innerHTML=`<table><tr><th>Order</th><th>Date</th><th>Customer</th><th>Phone</th><th>City</th><th>Total</th><th>Payment</th><th>Status</th></tr>${ofilter().map(o=>`<tr class="click" data-act="openorder" data-id="${o.id}"><td><b>#${o.number}</b></td><td>${dt(o.created_at)}</td><td>${esc(o.customer_name)}</td><td>${esc(o.phone)}</td><td>${esc(o.city)}</td><td>${money(o.total)}</td><td>${o.payment_method==="cod"?"Cash on Delivery":esc(o.payment_method)}</td><td><span class="tag ${o.status}">${o.status}</span></td></tr>`).join("")||'<tr><td colspan="8" class="mut">No orders found.</td></tr>'}</table>`;
+/* ---------- apply settings ---------- */
+function applySettings(){
+  const h=SETTINGS.hero;
+  /* words between *stars* are shown in light italic, e.g. "Carry Your *Identity*" */
+  let itl=false;
+  $("#hTitle").innerHTML=String(h.title||"").split(/\s+/).filter(Boolean).map((w,i)=>{
+    const open=w.startsWith("*"),close=w.endsWith("*")&&(w.length>1||!open);if(open)itl=true;const cls=itl?"w it":"w";if(close)itl=false;
+    return `<span class="${cls}"><i style="animation-delay:${.15+i*.12}s">${esc(w.replace(/\*/g,""))}</i></span>`}).join(" ");
+  $("#hDesc").textContent=h.desc; $("#hBtn span").textContent=h.btn; $("#hBtn").href=safeUrl(h.link);
+  const b2=$("#hBtn2");b2.hidden=!h.btn2;$("#hBtn2 span").textContent=h.btn2||"";b2.href=safeUrl(h.link2||"#about");
+  $("#hStats").innerHTML=(h.stats||[]).map(x=>String(x).split("|")).filter(x=>x[0].trim()).slice(0,4).map(x=>`<div><b>${esc(x[0].trim())}</b>${x[1]?`<small>${esc(x[1].trim())}</small>`:""}</div>`).join("");
+  buildMedia();
+  const a=[...SETTINGS.announcements,...SETTINGS.announcements,...SETTINGS.announcements,...SETTINGS.announcements];
+  $("#ann").innerHTML=a.map(t=>`<span>${esc(t).toUpperCase()}</span>`).join("");
+  const words=(CFG.ticker.words||[]).map(esc);
+  $("#tick").innerHTML=[...words,...words,...words,...words].map((w,i)=>i%2?`<em>${w}</em>`:`<span>${w}</span>`).join("<span>—</span>");
+  $("#aboutTxt").textContent=SETTINGS.about; $("#fAbout").textContent=CFG.footer.about;
+  const c=SETTINGS.contact;
+  $("#contact").innerHTML=[c.email&&`<span>${esc(c.email)}</span>`,c.phone&&`<span>${esc(c.phone)}</span>`,c.address&&`<span>${esc(c.address)}</span>`].filter(Boolean).join("")||"";
 }
-ACT.exportorders=()=>{
-  /* one line per product: size, colour, quantity and every price kept separate */
-  const rows=[["Order","Date","Customer","Phone","Email","Address","City","Product","Size","Colour","Quantity","Original price (per piece)","Discounted price (per piece)","Total before coupon","Coupon code","Coupon discount","Final after coupon","Delivery (order)","Order total","Payment","Status"]];
-  ofilter().forEach(o=>o.items.forEach((i,n)=>{const lt=i.line_total??i.unit*i.qty;
-    rows.push([o.number,o.created_at,o.customer_name,o.phone,o.email||"",o.address,o.city,i.name,i.size||"",i.colour||"",i.qty,i.original??"",i.unit,lt,o.coupon_code||"",i.coupon_discount??(n===0?o.discount:0),i.final??(n===0?lt-o.discount:lt),n===0?o.delivery:"",n===0?o.total:"",o.payment_method,o.status])}));
-  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="raas-orders.csv";a.click();
-};
-ACT.openorder=async a=>{
-  const o=S.orders.find(x=>x.id===a.dataset.id),h=await sb.from("order_history").select("*").eq("order_id",o.id).order("at");S.E={id:o.id};
-  modal(`<div class="printable"><h2>Order #${o.number} <span class="tag ${o.status}">${o.status}</span></h2><p class="mut">${dt(o.created_at)} · ${o.payment_method==="cod"?"Cash on Delivery":esc(o.payment_method)}</p>
-   <div class="r2" style="margin-top:12px"><label class="f"><span>Name</span><input id="on" value="${esc(o.customer_name)}"></label><label class="f"><span>Phone</span><input id="op" value="${esc(o.phone)}"></label>
-   <label class="f"><span>Email</span><input id="oe" value="${esc(o.email||"")}"></label><label class="f"><span>City</span><input id="oc" value="${esc(o.city)}"></label></div>
-   <label class="f"><span>Address</span><textarea id="oa" rows="2">${esc(o.address)}</textarea></label>
-   <div style="overflow-x:auto"><table style="min-width:0;margin:8px 0"><tr><th>Product</th><th>Colour</th><th>Size</th><th>Qty</th><th>Original<br><span class="mut" style="font-weight:400">per piece</span></th><th>Discounted<br><span class="mut" style="font-weight:400">per piece</span></th><th>Total<br><span class="mut" style="font-weight:400">before coupon</span></th><th>Coupon<br><span class="mut" style="font-weight:400">discount</span></th><th>Final<br><span class="mut" style="font-weight:400">after coupon</span></th></tr>${o.items.map(i=>{const lt=i.line_total??i.unit*i.qty,na='<span class="mut">—</span>';
-     return `<tr><td>${esc(i.name)}</td><td>${esc(i.colour)}</td><td>${i.size?`<b>${esc(sizeName(i.size))}</b>`:na}</td><td>${i.qty}</td><td>${i.original!=null?money(i.original):na}</td><td>${money(i.unit)}</td><td>${money(lt)}</td><td>${i.coupon_discount!=null?(+i.coupon_discount?"−"+money(i.coupon_discount):money(0)):na}</td><td>${i.final!=null?`<b>${money(i.final)}</b>`:na}</td></tr>`}).join("")}</table></div>
-   <p>${o.items.some(i=>i.original!=null)?`Original value ${money(o.items.reduce((a,i)=>a+(i.original??i.unit)*i.qty,0))} · `:""}Subtotal ${money(o.subtotal)} · Coupon ${o.coupon_code?`<b>${esc(o.coupon_code)}</b> −${money(o.discount)}`:'<span class="mut">none</span>'} · Delivery ${money(o.delivery)}</p><p><b>Total ${money(o.total)}</b></p>
-   <h3 style="margin-top:14px">History</h3>${(h.data||[]).map(x=>`<p class="mut">${dt(x.at)} — ${x.status}${x.note?": "+esc(x.note):""}</p>`).join("")}</div>
-   <div class="r2" style="margin-top:14px"><label class="f"><span>Change status</span><select id="ost">${STATUSES.map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></label><label class="f"><span>Note (optional)</span><input id="ono"></label></div>
-   <div class="acts"><button class="b o" data-act="printorder">Print</button><button class="b o" data-act="saveorder">Save customer details</button><button class="b" data-act="setstatus">Update status</button><button class="b o" data-act="close">Close</button></div>`,true);
-};
-ACT.printorder=()=>window.print();
-ACT.saveorder=async()=>{const r=await sb.from("orders").update({customer_name:$("#on").value.trim(),phone:$("#op").value.trim(),email:$("#oe").value.trim()||null,city:$("#oc").value.trim(),address:$("#oa").value.trim()}).eq("id",S.E.id);if(r.error)throw r.error;toast("Order details saved");V.orders()};
-ACT.setstatus=async()=>{const st=$("#ost").value;if(st==="cancelled"&&!confirm("Cancel this order? The stock will be returned."))return;
-  const r=await sb.rpc("set_order_status",{oid:S.E.id,new_status:st,note:$("#ono").value||null});if(r.error)throw r.error;closeModal();toast("Status updated");V.orders()};
 
-/* ---------------- customers ---------------- */
-V.customers=async()=>{
-  const r=await sb.from("orders").select("customer_name,phone,email,address,city,total,status,number,created_at").order("created_at",{ascending:false}).limit(1000);if(r.error)throw r.error;
-  const m=new Map();r.data.forEach(o=>{const k=o.phone.replace(/\D/g,"");const c=m.get(k)||{name:o.customer_name,phone:o.phone,email:o.email,address:o.address+", "+o.city,orders:[]};c.orders.push(o);m.set(k,c)});
-  S.cust=[...m.values()];
-  $("#view").innerHTML=`<div class="bar"><input id="cq" placeholder="Search name or phone"></div><div class="tw" id="cl"></div>`;
-  const draw=()=>{const q=$("#cq").value.toLowerCase();$("#cl").innerHTML=`<table><tr><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th>Orders</th><th>Spent</th></tr>${S.cust.map((c,i)=>({c,i})).filter(({c})=>(c.name+c.phone).toLowerCase().includes(q)).map(({c,i})=>`<tr class="click" data-act="opencust" data-i="${i}"><td><b>${esc(c.name)}</b></td><td>${esc(c.phone)}</td><td>${esc(c.email||"")}</td><td>${esc(c.address)}</td><td>${c.orders.length}</td><td>${money(c.orders.filter(o=>o.status!=="cancelled").reduce((a,o)=>a+ +o.total,0))}</td></tr>`).join("")||'<tr><td colspan="6" class="mut">No customers yet.</td></tr>'}</table>`};
-  $("#cq").addEventListener("input",draw);draw();
-};
-ACT.opencust=a=>{const c=S.cust[+a.dataset.i];modal(`<h2>${esc(c.name)}</h2><p class="mut">${esc(c.phone)} ${esc(c.email||"")}<br>${esc(c.address)}</p><h3 style="margin:14px 0 8px">Order history</h3>${c.orders.map(o=>`<p>#${o.number} · ${dt(o.created_at)} · ${money(o.total)} <span class="tag ${o.status}">${o.status}</span></p>`).join("")}<div class="acts"><button class="b o" data-act="close">Close</button></div>`)};
+/* ---------- collection ---------- */
+let state={cat:"all",sort:"new",avail:"",q:""};
+function drawCats(){
+  const cs=SETTINGS.categories,multi=cs.length>2;
+  if(!multi&&state.cat!=="all"&&cs[1])state.cat="all";
+  $("#cats").innerHTML=(multi?cs:[]).map(c=>`<button class="chip ${state.cat===c.id?'on':''}" data-cat="${c.id}">${c.name}</button>`).join("");
+}
+function drawGrid(){
+  let list=PRODUCTS.filter(p=>(state.cat==="all"||p.category===state.cat)&&(!state.q||p.name.toLowerCase().includes(state.q))&&(state.avail!=="in"||p.colours.some(c=>c.inStock)));
+  if(state.sort==="lo")list.sort((a,b)=>(eff(a)??1e12)-(eff(b)??1e12));
+  if(state.sort==="hi")list.sort((a,b)=>(eff(b)??-1)-(eff(a)??-1));
+  $("#grid").innerHTML=list.length?list.map((p,i)=>{
+    const c=p.colours[0],f=frames(c),ok=p.colours.some(x=>x.inStock);
+    return `<button class="pc rv" style="transition-delay:${(i%4)*80}ms" data-id="${p.id}">
+      <div class="img">${p.featured?`<span class="tag">${T("featured")}</span>`:''}${!ok?`<span class="tag">${T("soldOut")}</span>`:''}${off(p)?`<span class="tag sl">${off(p)}</span>`:''}
+        <div class="a">${frameHTML(f[0],0,c.hex)}</div>${f[1]?`<div class="b">${frameHTML(f[1],1,c.hex)}</div>`:''}
+        ${p.video?`<span class="hint">${T("video")}</span>`:''}</div>
+      <h3>${p.name}</h3><div class="cat">${(SETTINGS.categories.find(x=>x.id===p.category)||{}).name||""}</div>
+      <div class="pr">${priceHTML(p)}</div>
+      <div class="dots">${p.colours.map(x=>`<i class="dot" style="background:${x.hex}"></i>`).join("")}</div></button>`}).join(""):'<div class="empty">${esc(T("emptyShop"))}</div>';
+  observe();
+}
+document.addEventListener("click",e=>{
+  const ch=e.target.closest("[data-cat]"); if(ch){state.cat=ch.dataset.cat;drawCats();drawGrid()}
+  const pc=e.target.closest(".pc"); if(pc)openProduct(pc.dataset.id);
+  if(e.target.closest("[data-close]")){e.preventDefault();closeProduct()}
+  const pol=e.target.closest("[data-policy]"); if(pol){e.preventDefault();alert(SETTINGS.policies[pol.dataset.policy])}
+});
+$("#sort").onchange=e=>{state.sort=e.target.value;drawGrid()};
+$("#avail").onchange=e=>{state.avail=e.target.value;drawGrid()};
+$("#q").oninput=e=>{state.q=e.target.value.trim().toLowerCase();drawGrid()};
+$("#sbtn").onclick=()=>{$("#search").classList.toggle("on");$("#q").focus()};
+$("#menu").onclick=()=>$("#nav").classList.toggle("open");
+$$("#nav a").forEach(a=>a.onclick=()=>$("#nav").classList.remove("open"));
 
-/* ---------------- coupons & discounts ---------------- */
-const CP_SCOPES={all:"Entire website",products:"Specific products",categories:"Specific categories"};
-function cpStatus(c){const now=Date.now();
-  if(!c.active)return ["Inactive","cancelled"];
-  if(c.ends_at&&Date.parse(c.ends_at)<=now)return ["Expired","cancelled"];
-  if(c.starts_at&&Date.parse(c.starts_at)>now)return ["Scheduled","pending"];
-  if(c.max_uses!=null&&c.used>=c.max_uses)return ["Used up","cancelled"];
-  return ["Live","delivered"]}
-const cpValue=c=>c.type==="percent"?(+c.value)+"%":money(c.value);
-function cpScope(c){
-  const names=(ids,list)=>(ids||[]).map(id=>(list.find(x=>x.id===id)||{name:"(deleted)"}).name);
-  if(c.scope==="products"){const n=names(c.product_ids,S.cpProds);return `<b>${n.length} product${n.length===1?"":"s"}</b><br><span class="mut">${esc(n.slice(0,2).join(", "))}${n.length>2?" +"+(n.length-2):""}</span>`}
-  if(c.scope==="categories"){const n=names(c.category_ids,S.cats);return `<b>Categories</b><br><span class="mut">${esc(n.join(", "))}</span>`}
-  return "Entire website"}
-V.coupons=async()=>{
-  const [r,p,c]=await Promise.all([sb.from("coupons").select("*").order("created_at",{ascending:false}),sb.from("products").select("id,name,category_id,active").order("name"),sb.from("categories").select("*").order("sort")]);
-  [r,p,c].forEach(x=>{if(x.error)throw x.error});
-  S.coupons=r.data;S.cpProds=p.data;S.cats=c.data;
-  const st=S.coupons.map(cpStatus).map(x=>x[0]),n=k=>st.filter(x=>x===k).length,card=(l,v)=>`<div class="card"><small>${l}</small><b>${v}</b></div>`;
-  $("#view").innerHTML=`<div class="cards">${card("Coupons",S.coupons.length)}${card("Live now",n("Live"))}${card("Scheduled",n("Scheduled"))}${card("Expired / used up",n("Expired")+n("Used up"))}${card("Inactive",n("Inactive"))}${card("Times used",S.coupons.reduce((a,c)=>a+(c.used||0),0))}</div>
-   <div class="bar"><input id="kq" placeholder="Search coupon code"><select id="kf" data-chg="cplist"><option value="">All statuses</option>${["Live","Scheduled","Expired","Used up","Inactive"].map(s=>`<option>${s}</option>`).join("")}</select><button class="b" data-act="newcoupon">+ Create coupon</button></div>
-   <div class="tw" id="klist"></div>`;
-  $("#kq").addEventListener("input",drawCoupons);drawCoupons();
-};
-CHG.cplist=()=>drawCoupons();
-function drawCoupons(){
-  const q=($("#kq").value||"").trim().toUpperCase(),f=$("#kf").value;
-  const rows=S.coupons.filter(c=>c.code.toUpperCase().includes(q)&&(!f||cpStatus(c)[0]===f));
-  $("#klist").innerHTML=`<table><tr><th>Code</th><th>Discount</th><th>Applies to</th><th>Min. order</th><th>Valid</th><th>Used</th><th>Status</th><th>Active</th><th></th></tr>${rows.map(c=>{const s=cpStatus(c);
-    return `<tr><td><b style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em">${esc(c.code)}</b></td><td><b>${cpValue(c)}</b>${c.type==="percent"?"":' <span class="mut">fixed</span>'}</td><td>${cpScope(c)}</td>
-    <td>${c.min_order!=null?money(c.min_order):'<span class="mut">none</span>'}</td>
-    <td style="white-space:nowrap">${c.starts_at?dt(c.starts_at):"Any time"}<br><span class="mut">→ ${c.ends_at?dt(c.ends_at):"no expiry"}</span></td>
-    <td>${c.used||0}${c.max_uses!=null?" / "+c.max_uses:' <span class="mut">/ ∞</span>'}</td><td><span class="tag ${s[1]}">${s[0]}</span></td>
-    <td><input type="checkbox" ${c.active?"checked":""} data-chg="cptoggle" data-id="${c.id}" aria-label="Active"></td>
-    <td style="white-space:nowrap"><button class="b o s" data-act="editcoupon" data-id="${c.id}">Edit</button> <button class="b d s" data-act="delcoupon" data-id="${c.id}">Delete</button></td></tr>`}).join("")||`<tr><td colspan="9" class="mut">${S.coupons.length?"No coupons match.":'No coupons yet. Click "Create coupon".'}</td></tr>`}</table>`;
+/* ---------- product page: gallery + 360° drag viewer + video ---------- */
+let cur=null,sel=null,idx=0,qty=1,mode="photos",pfirst=false,selSize="",sizeNeed=false,colPick=true,colNeed=false;
+/* total for the chosen quantity (product page) */
+const ptotHTML=()=>{const e=eff(cur);return e==null?"":`${esc(T("total"))}:<b>${money(e*qty)}</b>${qty>1?`<small>${qty} × ${money(e)}</small>`:""}`};
+function openProduct(id){
+  cur=PRODUCTS.find(p=>p.id===id); sel=cur.colours.find(c=>c.inStock)||cur.colours[0]; idx=0;qty=1;mode="photos";pfirst=true;selSize="";sizeNeed=false;
+  colPick=cur.colours.length<2;colNeed=false;   // several colours: the customer must pick one; a single colour is chosen automatically
+  renderProduct(); $("#pdp").classList.add("open"); $("#pdp").setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; $("#pdp").scrollTop=0;
 }
-CHG.cptoggle=async t=>{const {error}=await sb.from("coupons").update({active:t.checked}).eq("id",t.dataset.id);if(error){t.checked=!t.checked;throw error}
-  S.coupons.find(c=>c.id===t.dataset.id).active=t.checked;drawCoupons();toast(t.checked?"Coupon activated":"Coupon deactivated")};
-ACT.newcoupon=()=>couponForm(null);ACT.editcoupon=a=>couponForm(a.dataset.id);
-function couponForm(id){
-  const c=id?S.coupons.find(x=>x.id===id):{code:"",type:"percent",value:10,scope:"all",product_ids:[],category_ids:[],starts_at:null,ends_at:null,max_uses:null,min_order:null,used:0,active:true};
-  S.E={id,scope:c.scope||"all",pids:new Set(c.product_ids||[]),cids:new Set(c.category_ids||[]),used:c.used||0};
-  const L=(t,h,hint)=>`<label class="f"><span>${t}</span>${h}${hint?`<small class="mut" style="font-size:12px">${hint}</small>`:""}</label>`;
-  modal(`<h2>${id?"Edit coupon":"Create coupon"}</h2>
-   <div class="r2">${L("Coupon code",`<div class="cp"><input id="kc" value="${esc(c.code)}" placeholder="e.g. WELCOME10" maxlength="30" spellcheck="false" autocomplete="off" style="text-transform:uppercase;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em"><button class="b o s" type="button" data-act="gencode" style="white-space:nowrap">Generate</button></div>`,"Letters, numbers, - and _ (3 to 30 characters). Customers can type it in any letter case.")}
-   ${L("Status",`<select id="ka"><option value="1" ${c.active?"selected":""}>Active</option><option value="0" ${!c.active?"selected":""}>Inactive</option></select>`)}</div>
-   <div class="r2">${L("Discount type",`<select id="kt" data-chg="cpcalc"><option value="percent" ${c.type!=="fixed"?"selected":""}>Percentage (%)</option><option value="fixed" ${c.type==="fixed"?"selected":""}>Fixed amount (PKR)</option></select>`)}
-   ${L("Discount amount",`<input id="kv" type="number" min="1" max="100" step="1" value="${c.value??""}">`)}</div>
-   <p id="kcalc" class="mut" style="margin:-4px 0 12px"></p>
-   <div class="f"><span>Coupon applies to</span><div class="tabs" style="margin:0">${Object.entries(CP_SCOPES).map(([k,l])=>`<button type="button" class="b o s ${S.E.scope===k?"on":""}" data-act="cpscope" data-s="${k}">${l}</button>`).join("")}</div></div>
-   <div id="kpick"></div>
-   <div class="r2">${L("Start date (optional)",`<input id="ks" type="datetime-local" value="${c.starts_at?toLocal(c.starts_at):""}">`,"Empty = active immediately")}
-   ${L("Expiry date (optional)",`<input id="ke" type="datetime-local" value="${c.ends_at?toLocal(c.ends_at):""}">`,"Empty = never expires")}</div>
-   <div class="r2">${L("Usage limit (optional)",`<input id="km" type="number" min="1" step="1" value="${c.max_uses??""}" placeholder="Unlimited">`,`Total times this code can be used by all customers.${id?` Used so far: <b>${S.E.used}</b>.`:""}`)}
-   ${L("Minimum order amount (optional, PKR)",`<input id="kmin" type="number" min="0" step="1" value="${c.min_order??""}" placeholder="No minimum">`,"Checked against the cart subtotal.")}</div>
-   <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="savecoupon">${id?"Save changes":"Create coupon"}</button></div>`,true);
-  drawPick();cpCalc();
-  $("#kv").addEventListener("input",cpCalc);
+function closeProduct(){$("#pdp").classList.remove("open");$("#pdp").setAttribute("aria-hidden","true");document.body.style.overflow="";stopAuto()}
+function renderProduct(){
+  const p=cur,f=frames(sel),ok=colPick?sel.inStock:p.colours.some(c=>c.inStock),on=c=>colPick&&c===sel;
+  $("#pbody").innerHTML=`
+  <div class="gal">
+    <div class="thumbs">${f.length>1?f.map((im,i)=>`<button data-th="${i}" class="${i===idx&&mode==='photos'?'on':''}" aria-label="Photo ${i+1}">${frameHTML(im,i,sel.hex)}</button>`).join(""):""}
+      ${p.video?`<button data-th="v" class="${mode==='video'?'on':''}" style="display:grid;place-items:center;background:#000;color:#fff;font-size:11px">▶ ${T("video")}</button>`:""}</div>
+    <div class="view" id="view">
+      ${mode==="video"&&p.video?`<video src="${p.video}" controls autoplay muted loop playsinline></video>`:
+        f.map((im,i)=>`<div class="layer" data-l="${i}" style="opacity:${i===idx?1:0}">${frameHTML(im,i,sel.hex)}</div>`).join("")+
+        `<div class="vbar"><span>${f.length>1?`<span class="pill" id="cnt2">${idx+1} / ${f.length}</span>`:""}</span><span><button class="pill" id="zbtn">${T("zoom")}</button></span></div>`}
+    </div>
+  </div>
+  <div class="info">
+    <div style="font-size:12px;color:var(--muted)">${(SETTINGS.categories.find(x=>x.id===p.category)||{}).name||""}</div>
+    <h1>${p.name}</h1>
+    <div class="price">${priceHTML(p)}${off(p)?`<span class="off">${off(p)}</span>`:""}</div>
+    ${disc(p).end?`<div class="pcd"><small>${T("offerEnds")}</small>${cdnHTML(disc(p).end)}</div>`:""}
+    <span class="badge ${ok?'':'out'}">${ok?T("inStock"):T("outStock")}</span>${p.sku?`<span class="mut" style="margin-left:10px;font-size:12px;color:var(--muted)">SKU: ${p.sku}</span>`:""}
+    <p style="margin-top:18px;color:var(--muted)">${p.description||""}</p>
+    <div class="colbox${colNeed&&!colPick?" need":""}" id="colbox"><div class="lbl">${T("colour")}<span id="cname">${colPick?sel.name:""}</span></div>
+    <div class="sw" role="radiogroup" aria-label="${esc(T("colour"))}">${p.colours.map(c=>`<button type="button" role="radio" aria-checked="${on(c)}" data-col="${c.name}" class="${on(c)?'on':''} ${c.inStock?'':'na'}" style="background:${c.hex}" title="${c.name}${c.inStock?'':' — unavailable'}" aria-label="${c.name}"></button>`).join("")}</div>
+    <div class="cnames">${p.colours.map(c=>`<span class="${on(c)?'on':''}">${c.name}</span>`).join("")}</div>
+    <div class="szerr" role="alert">${esc(T("colourRequired"))}</div></div>
+    ${p.sizes&&p.sizes.length?`<div class="szbox${sizeNeed&&!selSize?" need":""}" id="szbox"><div class="lbl">${T("sizeSelect")}<span id="szname">${selSize?sizeName(selSize):""}</span></div>
+    <div class="szg" role="radiogroup" aria-label="${esc(T("sizeSelect"))}">${p.sizes.map(z=>`<button type="button" role="radio" aria-checked="${z===selSize}" data-size="${z}" class="${z===selSize?"on":""}" title="${esc(sizeName(z))}">${z}</button>`).join("")}</div>
+    <div class="szerr" role="alert">${esc(T("sizeRequired"))}</div></div>`:""}
+    <div class="qrow"><div class="qty"><button id="qm" aria-label="Less"${qty<=1?" disabled":""}>−</button><output id="qv">${qty}</output><button id="qp" aria-label="More"${qty>=10?" disabled":""}>+</button></div><div class="ptot" id="ptot" aria-live="polite">${ptotHTML()}</div></div>
+    <div class="acts">
+      <button class="btn" id="add" ${ok?"":"disabled style='opacity:.4;pointer-events:none'"}><span>${T("addToCart")}</span></button>
+      <button class="btn ghost" id="buy" ${ok?"":"disabled style='opacity:.4;pointer-events:none'"}><span>${T("buyNow")}</span></button>
+    </div>
+    <div class="spec">
+      <details open><summary>${T("deliveryTitle")}</summary><p>${esc(CFG.delivery.info)}</p></details>
+      ${p.specs&&p.specs.length?`<details open><summary>${T("specsTitle")}</summary><table class="spt">${p.specs.map(s=>`<tr><th>${s.k}</th><td>${s.v}</td></tr>`).join("")}</table></details>`:""}
+    </div>
+  </div>`;
+  $("#pbody").classList.toggle("first",pfirst);pfirst=false;
+  $$("#pbody .info>*").forEach((e,i)=>e.style.setProperty("--i",i));
+  bindViewer();tick();
 }
-CHG.cpcalc=()=>{$("#kv").max=$("#kt").value==="percent"?100:"";cpCalc()};
-function cpCalc(){const t=$("#kt").value,v=+$("#kv").value,ex=5000;
-  if(!(v>0)){$("#kcalc").textContent="";return}
-  const d=t==="percent"?Math.round(ex*Math.min(v,100)/100):Math.min(ex,v);
-  $("#kcalc").textContent=`Example: an order of ${money(ex)} → ${money(d)} off → customer pays ${money(ex-d)}${S.E.scope!=="all"?" (only for the selected "+(S.E.scope==="products"?"products":"categories")+")":""}.`}
-ACT.gencode=()=>{const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<8;i++)s+=a[Math.floor(Math.random()*a.length)];$("#kc").value=s};
-ACT.cpscope=a=>{S.E.scope=a.dataset.s;$$("[data-act=cpscope]").forEach(b=>b.classList.toggle("on",b===a));drawPick();cpCalc()};
-function drawPick(){
-  const box=$("#kpick");if(S.E.scope==="all"){box.innerHTML="";return}
-  const isP=S.E.scope==="products",list=isP?S.cpProds:S.cats,set=isP?S.E.pids:S.E.cids;
-  box.innerHTML=`<div class="panel" style="padding:12px"><div class="cp" style="margin-bottom:8px"><input id="kps" placeholder="Search ${isP?"products":"categories"}"><span class="mut" style="align-self:center;white-space:nowrap" id="kpn"></span></div>
-    <div id="kpl" style="max-height:220px;overflow:auto;display:grid;gap:2px"></div></div>`;
-  const draw=()=>{const q=$("#kps").value.toLowerCase();
-    $("#kpl").innerHTML=list.filter(x=>x.name.toLowerCase().includes(q)).map(x=>`<label class="tg" style="margin:0;padding:6px 4px;border-bottom:1px solid var(--line)"><input type="checkbox" data-chg="cppick" value="${x.id}" ${set.has(x.id)?"checked":""}> ${esc(x.name)}${x.active===false?' <span class="mut">(hidden)</span>':""}</label>`).join("")||`<p class="mut">No ${isP?"products":"categories"} found.</p>`;
-    $("#kpn").textContent=set.size+" selected"};
-  $("#kps").addEventListener("input",draw);draw();
+function show(i){
+  const f=frames(sel).length; idx=((i%f)+f)%f;
+  $$("#view .layer").forEach((l,k)=>l.style.opacity=k===idx?1:0);
+  const c=$("#cnt2"); if(c)c.textContent=`${idx+1} / ${f}`;
+  $$(".thumbs button").forEach((b,k)=>b.classList.toggle("on",mode==="photos"&&k===idx));
 }
-CHG.cppick=t=>{const set=S.E.scope==="products"?S.E.pids:S.E.cids;t.checked?set.add(t.value):set.delete(t.value);$("#kpn").textContent=set.size+" selected"};
-ACT.savecoupon=async a=>{
-  const v=i=>$("#"+i).value.trim(),num=i=>v(i)===""?null:+v(i);
-  const row={code:v("kc").toUpperCase(),type:v("kt"),value:num("kv"),scope:S.E.scope,
-    product_ids:S.E.scope==="products"?[...S.E.pids]:[],category_ids:S.E.scope==="categories"?[...S.E.cids]:[],
-    starts_at:v("ks")?new Date(v("ks")).toISOString():null,ends_at:v("ke")?new Date(v("ke")).toISOString():null,
-    max_uses:num("km"),min_order:num("kmin"),active:v("ka")==="1"};
-  if(!/^[A-Z0-9_-]{3,30}$/.test(row.code))throw new Error("Coupon code: use 3 to 30 letters, numbers, - or _ (no spaces)");
-  if(!(row.value>0))throw new Error("Enter a discount amount above zero");
-  if(row.type==="percent"&&row.value>100)throw new Error("A percentage discount cannot be more than 100%");
-  if(row.scope==="products"&&!row.product_ids.length)throw new Error("Select at least one product, or choose Entire website");
-  if(row.scope==="categories"&&!row.category_ids.length)throw new Error("Select at least one category, or choose Entire website");
-  if(row.starts_at&&row.ends_at&&row.ends_at<=row.starts_at)throw new Error("The expiry date must be after the start date");
-  if(row.max_uses!=null&&(!Number.isInteger(row.max_uses)||row.max_uses<1))throw new Error("Usage limit must be a whole number of 1 or more (or empty for unlimited)");
-  if(row.max_uses!=null&&row.max_uses<S.E.used&&!confirm(`This coupon was already used ${S.E.used} times, more than the new limit of ${row.max_uses}. It will stop working. Continue?`))return;
-  if(row.min_order!=null&&!(row.min_order>=0))throw new Error("Minimum order amount cannot be negative");
-  if(!S.E.id&&row.ends_at&&Date.parse(row.ends_at)<=Date.now()&&!confirm("The expiry date is in the past, so this coupon will not work. Save anyway?"))return;
-  a.disabled=true;
-  try{
-    const r=S.E.id?await sb.from("coupons").update(row).eq("id",S.E.id):await sb.from("coupons").insert(row);
-    if(r.error){if(r.error.code==="23505")throw new Error(`A coupon with the code ${row.code} already exists`);throw r.error}
-    closeModal();toast(S.E.id?"Coupon saved":"Coupon created");V.coupons();
-  }finally{a.disabled=false}
-};
-ACT.delcoupon=async a=>{const c=S.coupons.find(x=>x.id===a.dataset.id);
-  if(!confirm(`Delete coupon ${c?c.code:""}? Customers will no longer be able to use it. Orders that already used it are kept.`))return;
-  const r=await sb.from("coupons").delete().eq("id",a.dataset.id);if(r.error)throw r.error;toast("Coupon deleted");V.coupons()};
+let autoT=null; const stopAuto=()=>{clearInterval(autoT);autoT=null;const a=$("#auto");a&&a.classList.remove("on")};
+function bindViewer(){
+  const v=$("#view"); if(!v||mode==="video")return;
+  v.addEventListener("pointermove",e=>{
+    if(!v.classList.contains("zoom"))return;
+    const r=v.getBoundingClientRect();$$("#view .layer").forEach(l=>l.style.transform=`scale(2.2) translate(${(.5-(e.clientX-r.left)/r.width)*40}%,${(.5-(e.clientY-r.top)/r.height)*40}%)`)});
+  $("#zbtn").onclick=()=>{const z=v.classList.toggle("zoom");$("#zbtn").classList.toggle("on",z);if(!z)$$("#view .layer").forEach(l=>l.style.transform="")};
+}
+$("#pbody").addEventListener("click",e=>{
+  const th=e.target.closest("[data-th]"),col=e.target.closest("[data-col]");
+  if(th){stopAuto(); if(th.dataset.th==="v"){mode="video";renderProduct()}else{if(mode!=="photos"){mode="photos";idx=+th.dataset.th;renderProduct()}else show(+th.dataset.th)}}
+  if(col){sel=cur.colours.find(c=>c.name===col.dataset.col);colPick=true;colNeed=false;idx=0;mode="photos";stopAuto();renderProduct()}
+  if(e.target.id==="qm"||e.target.id==="qp"){   // quantity is always a whole number from 1 to 10
+    qty=Math.max(1,Math.min(10,qty+(e.target.id==="qp"?1:-1)));
+    $("#qv").textContent=qty;$("#qm").disabled=qty<=1;$("#qp").disabled=qty>=10;$("#ptot").innerHTML=ptotHTML()}
+  const sz=e.target.closest("[data-size]");
+  if(sz){selSize=sz.dataset.size;sizeNeed=false;
+    $$("#pbody .szg button").forEach(b=>{const on=b.dataset.size===selSize;b.classList.toggle("on",on);b.setAttribute("aria-checked",on)});
+    $("#szname").textContent=sizeName(selSize);$("#szbox").classList.remove("need")}
+  if(e.target.closest("#add")){if(addToCart())openCart()}
+  if(e.target.closest("#buy")){if(addToCart()){closeProduct();openCart(true)}}
+});
 
-/* ---------------- website customization (schema-driven, with live preview) ---------------- */
-const getP=(o,k)=>k.split(".").reduce((a,x)=>a&&a[x],o);
-const setP=(o,k,v)=>{const p=k.split(".");let a=o;while(p.length>1)a=a[p.shift()];a[p[0]]=v};
-V.site=async()=>{
-  if(ME.role!=="owner")throw new Error("Only owners can change the website");
-  const r=await sb.from("site_config").select("data").eq("id","main").maybeSingle();if(r.error)throw r.error;
-  S.draft=RAAS_merge(RAAS_DEFAULTS,(r.data&&r.data.data)||{});S.grp=S.grp||RAAS_SCHEMA[0].id;
-  $("#view").innerHTML=`<div class="site"><div class="pane"><div class="panel"><select id="grp" data-chg="grp">${RAAS_SCHEMA.map(g=>`<option value="${g.id}" ${g.id===S.grp?"selected":""}>${g.title}</option>`).join("")}</select></div><div class="panel" id="sform"></div>
-   <div class="acts" style="margin:0 0 20px;justify-content:flex-start"><button class="b" data-act="savesite">Save &amp; publish</button><button class="b o" data-act="discard">Discard changes</button><button class="b o" data-act="resetgrp">Reset section to defaults</button></div></div>
-   <div class="pvw" id="pvw"><div class="bar" style="padding:8px;margin:0"><button class="b o s" data-act="pvd">Desktop</button><button class="b o s" data-act="pvm">Phone</button><a class="b o s" href="../index.html" target="_blank" style="text-decoration:none">Open site</a><span class="mut" style="align-self:center;font-size:12px">Live preview: changes show here instantly</span></div><iframe id="pv" src="../index.html?preview=1"></iframe></div></div>`;
-  $("#pv").onload=()=>{pv();pvScroll()};drawGroup();
-};
-CHG.grp=t=>{S.grp=t.value;drawGroup();pvScroll()};
-ACT.pvd=()=>$("#pvw").classList.remove("m");ACT.pvm=()=>$("#pvw").classList.add("m");
-function pv(){clearTimeout(pv.t);pv.t=setTimeout(()=>{const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasPreview:JSON.parse(JSON.stringify(S.draft))},"*")},120)}
-const SCR={hero:"#top",layers:"#top",motion:"#top",ticker:".ticker",sections:"#shop",sale:"#sale",banner:"#banner",about:"#about",contact:"footer",policies:"footer",footer:"footer",delivery:"#shop",colours:"",seccolors:"",sizes:"",type:"",brand:"",announcement:"",text:""};
-function pvScroll(){const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage({raasScroll:SCR[S.grp]||""},"*")}
-const SECN={ticker:"Moving text band",sale:"Sale strip",banner:"Motion banner",shop:"Products",about:"About"};
-const isVid=u=>/\.(mp4|webm|mov)(\?|$)/i.test(u||"");
-function drawGroup(){
-  const g=RAAS_SCHEMA.find(x=>x.id===S.grp);$("#sform").innerHTML=`<h3>${g.title}</h3>`+g.fields.map(fld).join("");pv();
+/* ---------- cart + checkout (cart is browser-only; orders need the backend) ---------- */
+let cart=[]; try{cart=JSON.parse(localStorage.getItem("raas_cart")||"[]")}catch(e){}
+const save=()=>{try{localStorage.setItem("raas_cart",JSON.stringify(cart))}catch(e){}};
+function addToCart(){
+  const needs=cur.sizes&&cur.sizes.length;
+  /* clothing with sizes cannot be added without a size; a product with several colours needs a colour */
+  const miss=[];if(!colPick){colNeed=true;miss.push($("#colbox"))}if(needs&&!selSize){sizeNeed=true;miss.push($("#szbox"))}
+  if(miss.length){
+    miss.forEach(b=>{if(b){b.classList.remove("need");void b.offsetWidth;b.classList.add("need")}});
+    miss[0]&&miss[0].scrollIntoView({block:"center",behavior:"smooth"});
+    return false}
+  qty=Math.max(1,Math.min(10,parseInt(qty)||1));
+  const size=needs?selSize:"",k=cur.id+"|"+sel.name+(size?"|"+size:""),l=cart.find(x=>x.k===k);
+  l?l.qty=Math.min(10,l.qty+qty):cart.push({k,id:cur.id,cid:sel.id,name:cur.name,colour:sel.name,size,hex:sel.hex,img:frames(sel)[0],price:eff(cur),qty});
+  save();drawCart();const b=$("#cnt");b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");return true;
 }
-function fld(f){
-  const v=getP(S.draft,f.k),k=`data-k="${f.k}"`,L=`<span>${esc(f.l)}</span>`;
-  switch(f.t){
-    case"text":return `<label class="f">${L}<input ${k} value="${esc(v)}"></label>`;
-    case"textarea":return `<label class="f">${L}<textarea rows="4" ${k}>${esc(v)}</textarea></label>`;
-    case"number":return `<label class="f">${L}<input type="number" min="0" ${k} data-t="number" value="${esc(v)}"></label>`;
-    case"datetime":return `<label class="f">${L}<input type="datetime-local" ${k} data-t="datetime" value="${v?toLocal(v):""}"></label>`;
-    case"color":return `<div class="f">${L}<div class="cp"><input type="color" ${k} data-t="color" value="${esc(v)}"><input ${k} data-t="color" value="${esc(v)}" maxlength="7" placeholder="#000000"></div></div>`;
-    case"range":return `<label class="f">${L}<div class="cp"><input type="range" ${k} data-t="range" min="${f.min}" max="${f.max}" step="${f.step}" value="${v}"><output style="min-width:44px">${v}</output></div></label>`;
-    case"toggle":return `<label class="tg"><input type="checkbox" ${k} data-t="toggle" ${v?"checked":""}> ${esc(f.l)}</label>`;
-    case"select":return `<label class="f">${L}<select ${k} data-t="${typeof f.opts[0]==="number"?"numsel":"select"}">${f.opts.map(o=>`<option ${String(o)===String(v)?"selected":""}>${o}</option>`).join("")}</select></label>`;
-    case"list":return `<label class="f">${L}<textarea rows="4" ${k} data-t="list">${esc((v||[]).join("\n"))}</textarea></label>`;
-    case"image":case"video":case"media":return `<div class="f">${L}<input ${k} value="${esc(v)}" placeholder="https://… or upload"><div class="mrow"><label class="b o s">Upload<input type="file" hidden accept="${f.t==="video"?"video/*":f.t==="media"?"image/*,video/*":"image/*"}" data-chg="siteup" data-key="${f.k}" data-kind="${f.t}"></label><button class="b o s" data-act="clearmedia" data-key="${f.k}">Clear</button></div>${v?(isVid(v)?`<video src="${esc(v)}" muted controls style="height:80px"></video>`:`<img src="${esc(v)}" style="height:64px;background:#eee">`):""}</div>`;
-    case"layers":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="lay"><div class="mrow2" style="grid-template-columns:1fr auto auto"><input data-li="${i}" data-lf="src" placeholder="Image / GIF / video URL" value="${esc(x.src||"")}"><label class="b o s" style="display:inline-grid">Upload<input type="file" hidden accept="image/*,video/*" data-chg="layerup" data-i="${i}"></label><button class="b d s" data-act="layerdel" data-i="${i}">Remove</button></div>
-      <div class="r2"><label>Left (%) <input type="range" min="0" max="100" data-li="${i}" data-lf="x" value="${x.x}"><output>${x.x}</output></label><label>Top (%) <input type="range" min="0" max="100" data-li="${i}" data-lf="y" value="${x.y}"><output>${x.y}</output></label>
-      <label>Size (% of width) <input type="range" min="3" max="100" data-li="${i}" data-lf="w" value="${x.w}"><output>${x.w}</output></label><label>Opacity (%) <input type="range" min="5" max="100" data-li="${i}" data-lf="opacity" value="${x.opacity}"><output>${x.opacity}</output></label>
-      <label>Movement <select data-li="${i}" data-lf="anim">${["float","spin","pulse","drift","none"].map(o=>`<option ${o===x.anim?"selected":""}>${o}</option>`).join("")}</select></label><label>Position <select data-li="${i}" data-lf="z">${["front","back"].map(o=>`<option ${o===x.z?"selected":""}>${o}</option>`).join("")}</select></label></div></div>`).join("")}<button class="b o s" data-act="layeradd">+ Add motion graphic</button></div>`;
-    case"views":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="mrow2"><input data-vi="${i}" data-vf="label" placeholder="Label (Back)" value="${esc(x.label||"")}"><input data-vi="${i}" data-vf="src" placeholder="Image URL" value="${esc(x.src||"")}"><label class="b o s">Upload<input type="file" hidden accept="image/*" data-chg="viewup" data-i="${i}"></label><button class="b d s" data-act="viewdel" data-i="${i}">✕</button></div>`).join("")}<button class="b o s" data-act="viewadd">+ Add view</button></div>`;
-    case"sections":return `<div class="f">${L}${(v||[]).map((x,i)=>`<div class="mrow2" style="grid-template-columns:1fr auto auto auto"><b>${SECN[x.id]||x.id}</b><label><input type="checkbox" data-si="${i}" ${x.show?"checked":""}> show</label><button class="b o s" data-act="secmv" data-i="${i}" data-d="-1">↑</button><button class="b o s" data-act="secmv" data-i="${i}" data-d="1">↓</button></div>`).join("")}</div>`;
+function totals(){
+  const sub=cart.reduce((s,i)=>s+(i.price||0)*i.qty,0),d=SETTINGS.delivery;
+  const ship=!cart.length?0:(d.freeAbove!=null&&sub>=d.freeAbove)?0:(d.charge||0);
+  return {sub,ship,tot:sub+ship};
+}
+/* ---------- discount code: checked and priced on the server (apply_coupon); the browser never decides the discount ---------- */
+let COUPON=null;   // {code, q: server quote {subtotal, discount, delivery, total, type, value, ...}, sig}
+const cartSig=()=>cart.map(i=>i.cid+"x"+i.qty+"x"+(i.size||"")).join(",");
+/* a cart line that still needs a size (product has sizes but the line has none / one the admin has since removed) */
+const prodOf=i=>PRODUCTS.find(p=>p.id===i.id);
+const sizeBad=i=>{const p=prodOf(i);return !!(p&&p.sizes&&p.sizes.length&&!p.sizes.includes(i.size))};
+const pkr=n=>"PKR "+Number(n||0).toLocaleString("en-PK");
+function couponMsg(m,ok){const el=$("#cpmsg");if(!el)return;el.textContent=m||"";el.className="cpmsg"+(m?(ok?" ok":" err"):"");const i=$("#cpin");if(i)i.classList.toggle("bad",!!m&&!ok)}
+function friendlyErr(e){const m=e&&e.message||"";return /fetch|network|timeout|failed/i.test(m)&&!/discount|code|item|stock|cart/i.test(m)?T("couponNetErr"):m}
+function drawCoupon(){
+  const el=$("#cpn");if(!el)return;
+  if(COUPON&&COUPON.q){const q=COUPON.q;
+    el.innerHTML=`<div class="cpchip"><span><i>✓</i><b>${esc(q.code)}</b> ${esc(T("couponApplied"))} · ${q.type==="percent"?esc(T("pctOff").replace("{n}",+q.value)):esc(T("saveAmt").replace("{n}",Number(q.discount).toLocaleString("en-PK")))}</span><button type="button" id="cprm">${T("couponRemove")}</button></div><p class="cpmsg" id="cpmsg"></p>`;
+  }else{
+    el.innerHTML=`<b>${esc(T("haveCode"))}</b><div class="cpnrow"><input id="cpin" name="cpcode" placeholder="${esc(T("coupon"))}" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="30" aria-label="${esc(T("haveCode"))}"><button type="button" class="btn" id="cpapply"><span>${T("couponApply")}</span></button></div><p class="cpmsg" id="cpmsg" role="status" aria-live="polite"></p>`;
   }
-  return "";
 }
-function coerce(t,el){
-  switch(el.dataset.t){
-    case"toggle":return el.checked;case"range":case"numsel":return +el.value;case"list":return el.value.split("\n").map(x=>x.trim()).filter(Boolean);
-    case"number":return el.value===""?"":+el.value;case"datetime":return el.value?new Date(el.value).toISOString():"";
-    case"color":return el.value;default:return el.value}
+function drawTotals(){
+  const el=$("#ctot");if(!el)return;
+  const t=totals(),q=COUPON&&COUPON.sig===cartSig()?COUPON.q:null,del=v=>SETTINGS.delivery.charge==null?T("atCheckout"):v?pkr(v):T("free");
+  el.innerHTML=q?`
+   <div class="row"><span>${T("subtotal")}</span><span>${pkr(q.subtotal)}</span></div>
+   <div class="row cpl"><span>${T("couponLbl")}</span><span>${esc(q.code)}</span></div>
+   <div class="row disc"><span>${T("discountLbl")}${q.type==="percent"?" ("+(+q.value)+"%)":""}</span><span>−${pkr(q.discount)}</span></div>
+   <div class="row"><span>${T("delivery")}</span><span>${del(q.delivery)}</span></div>
+   <div class="row tot"><span>${T("total")}</span><span>${pkr(q.total)}</span></div>`:`
+   <div class="row"><span>${T("subtotal")}</span><span>PKR ${t.sub.toLocaleString("en-PK")}</span></div>
+   <div class="row"><span>${T("delivery")}</span><span>${del(t.ship)}</span></div>
+   <div class="row tot"><span>${T("total")}</span><span>PKR ${t.tot.toLocaleString("en-PK")}</span></div>`;
 }
-document.addEventListener("input",e=>{
-  const t=e.target,form=t.closest("#sform");if(!form)return;
-  if(t.dataset.li!=null){const Ly=S.draft.hero.layers[+t.dataset.li],f=t.dataset.lf;Ly[f]=["x","y","w","opacity"].includes(f)?+t.value:t.value;const o=t.parentElement.querySelector("output");if(o)o.textContent=t.value;return pv()}
-  if(t.dataset.vi!=null){S.draft.hero.views[+t.dataset.vi][t.dataset.vf]=t.value;return pv()}
-  if(t.dataset.si!=null){S.draft.sections[+t.dataset.si].show=t.checked;return pv()}
-  const k=t.dataset.k;if(!k)return;
-  let val=coerce(k,t);
-  if(t.dataset.t==="color"){if(!/^#[0-9a-f]{6}$/i.test(val))return;$$(`[data-k="${k}"]`,form).forEach(x=>{if(x!==t)x.value=val})}
-  if(t.dataset.t==="range"){const o=t.parentElement.querySelector("output");if(o)o.textContent=val}
-  setP(S.draft,k,val);pv();
+/* asks the server to check the code against the current cart. Returns true when the code was applied. */
+async function applyCoupon(code,quiet){
+  code=String(code||"").trim();
+  if(!code){couponMsg(T("couponEmpty"));$("#cpin")&&$("#cpin").focus();return false}
+  if(!sb){couponMsg(T("noBackend"));return false}
+  if(!cart.length)return false;
+  if(cart.some(i=>!i.cid)){couponMsg("Some items cannot be ordered right now.");return false}
+  const sig=cartSig(),btn=$("#cpapply");if(btn)btn.disabled=true;
+  let data,error;
+  try{({data,error}=await sb.rpc("apply_coupon",{code,items:cart.map(i=>({colour_id:i.cid,qty:i.qty}))}))}catch(e){error=e}
+  if(btn)btn.disabled=false;
+  if(sig!==cartSig())return applyCoupon(code,quiet);          // the cart changed while we were checking
+  if(error||!data){
+    const was=COUPON;COUPON=null;drawCoupon();drawTotals();
+    const i=$("#cpin");if(i)i.value=code;
+    couponMsg(was&&quiet?T("couponRemoved").replace("{c}",was.code)+" "+friendlyErr(error):friendlyErr(error));
+    return false}
+  COUPON={code:data.code,q:data,sig};drawCoupon();drawTotals();
+  couponMsg(T("couponSaved").replace("{n}",Number(data.discount).toLocaleString("en-PK")),true);
+  return true;
+}
+const removeCoupon=()=>{COUPON=null;drawCoupon();drawTotals();const i=$("#cpin");if(i)i.focus()};
+let coMode=false;
+function drawCart(checkout){coMode=!!checkout;
+  cart.forEach(i=>{const p=prodOf(i);if(p)i.price=eff(p);i.qty=Math.max(1,Math.min(10,parseInt(i.qty)||1))});   // always today's price, 1-10 pieces
+  $("#cnt").textContent=cart.reduce((s,i)=>s+i.qty,0);
+  $("#cbody").innerHTML=cart.length?cart.map((i,n)=>`<div class="ci"><div class="t">${frameHTML(i.img,0,i.hex)}</div>
+    <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small>${i.size&&!sizeBad(i)?`<small>${T("cartSize")}: <b style="font-weight:600">${sizeName(i.size)}</b></small>`:sizeBad(i)?`<select class="szpick" data-szfix="${n}" aria-label="${esc(T("sizeSelect"))}"><option value="">${esc(T("sizeChoose"))}</option>${prodOf(i).sizes.map(z=>`<option value="${z}">${sizeName(z)}</option>`).join("")}</select>`:""}<div class="qtyc"><button type="button" data-dec="${n}" aria-label="Less"${i.qty<=1?" disabled":""}>&minus;</button><output>${i.qty}</output><button type="button" data-inc="${n}" aria-label="More"${i.qty>=10?" disabled":""}>+</button></div><button class="rm" data-rm="${n}">${T("remove")}</button></div>
+    <div class="lt">${i.price==null?money(null):money(i.price*i.qty)}${i.price!=null&&i.qty>1?`<small>${i.qty} × ${money(i.price)}</small>`:""}</div></div>`).join(""):'<p class="empty">${T("emptyCart")}</p>';
+  if(!cart.length)COUPON=null;
+  $("#cfoot").innerHTML=cart.length?`${checkout?'<div class="cpn" id="cpn"></div>':""}<div id="ctot"></div>
+   ${checkout?`<form class="form" id="co"><input required name="name" placeholder="${T("fullName")}" autocomplete="name"><input required name="phone" inputmode="tel" placeholder="${T("phone")}" pattern="[0-9+ -]{10,16}" autocomplete="tel"><textarea required name="addr" rows="2" placeholder="${T("address")}"></textarea><input required name="city" placeholder="${T("city")}" autocomplete="address-level2"><label style="font-size:13px"><input type="radio" checked> ${T("cod")}</label><button class="btn" type="submit"><span>${T("placeOrder")}</span></button></form><p class="note" id="conote"></p>`:`<button class="btn" id="tocheck" style="width:100%;margin-top:14px"><span>${T("checkout")}</span></button>`}`:"";
+  drawCoupon();drawTotals();
+  if(COUPON&&COUPON.sig!==cartSig()){clearTimeout(drawCart.t);const c=COUPON.code;drawCart.t=setTimeout(()=>{if(COUPON&&COUPON.code===c&&COUPON.sig!==cartSig())applyCoupon(c,true)},250)}
+}
+/* coupon box: Apply button, Enter key, Remove */
+$("#cfoot").addEventListener("click",e=>{if(e.target.closest("#cpapply"))applyCoupon($("#cpin").value);if(e.target.closest("#cprm"))removeCoupon()});
+$("#cfoot").addEventListener("keydown",e=>{if(e.target.id==="cpin"&&e.key==="Enter"){e.preventDefault();applyCoupon(e.target.value)}});
+$("#cfoot").addEventListener("input",e=>{if(e.target.id==="cpin"&&$("#cpmsg").classList.contains("err"))couponMsg("")});
+$("#cbody").addEventListener("change",e=>{const f=e.target.closest("[data-szfix]");if(!f||!f.value)return;
+  const i=cart[+f.dataset.szfix];if(!i)return;i.size=f.value;i.k=i.id+"|"+i.colour+"|"+i.size;
+  const dup=cart.find(x=>x!==i&&x.k===i.k);if(dup){dup.qty=Math.min(10,dup.qty+i.qty);cart.splice(cart.indexOf(i),1)}
+  save();drawCart(coMode&&cart.length>0)});
+$("#cbody").addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const r=b.dataset.rm,inc=b.dataset.inc,dec=b.dataset.dec;
+  if(r==null&&inc==null&&dec==null)return;
+  const keep={};$$("#cfoot input,#cfoot textarea").forEach(x=>{if(x.name)keep[x.name]=x.value});
+  if(r!=null)cart.splice(+r,1);
+  else if(inc!=null)cart[+inc].qty=Math.min(10,cart[+inc].qty+1);
+  else if(dec!=null)cart[+dec].qty=Math.max(1,cart[+dec].qty-1);
+  save();drawCart(coMode&&cart.length>0);
+  $$("#cfoot input,#cfoot textarea").forEach(x=>{if(keep[x.name]!=null)x.value=keep[x.name]});
 });
-document.addEventListener("change",e=>{const t=e.target;if(t.closest("#sform")&&(t.type==="checkbox"||t.tagName==="SELECT")&&t.dataset.si==null){}});
-CHG.siteup=async t=>{if(!t.files[0])return;toast("Uploading…");setP(S.draft,t.dataset.key,await up(t.files[0],t.dataset.kind==="video"?"video":"site"));drawGroup();toast("Uploaded")};
-ACT.clearmedia=a=>{setP(S.draft,a.dataset.key,"");drawGroup()};
-CHG.viewup=async t=>{if(!t.files[0])return;toast("Uploading…");S.draft.hero.views[+t.dataset.i].src=await up(t.files[0],"site");drawGroup();toast("Uploaded")};
-CHG.layerup=async t=>{if(!t.files[0])return;toast("Uploading…");S.draft.hero.layers[+t.dataset.i].src=await up(t.files[0],"site");drawGroup();toast("Uploaded")};
-ACT.layeradd=()=>{S.draft.hero.layers.push({src:"",x:50,y:50,w:20,opacity:100,anim:"float",z:"front"});drawGroup()};
-ACT.layerdel=a=>{S.draft.hero.layers.splice(+a.dataset.i,1);drawGroup()};
-ACT.viewadd=()=>{S.draft.hero.views.push({label:"",src:""});drawGroup()};
-ACT.viewdel=a=>{S.draft.hero.views.splice(+a.dataset.i,1);drawGroup()};
-ACT.secmv=a=>{const i=+a.dataset.i,j=i+ +a.dataset.d,s=S.draft.sections;if(j<0||j>=s.length)return;[s[i],s[j]]=[s[j],s[i]];drawGroup()};
-ACT.savesite=async a=>{a.disabled=true;try{const r=await sb.from("site_config").upsert({id:"main",data:S.draft,updated_at:new Date().toISOString()});if(r.error)throw r.error;toast("Published. The website is updated.")}finally{a.disabled=false}};
-ACT.discard=()=>V.site();
-ACT.resetgrp=()=>{if(!confirm("Reset this section to the original defaults? (Not saved until you press Save & publish.)"))return;
-  RAAS_SCHEMA.find(x=>x.id===S.grp).fields.forEach(f=>setP(S.draft,f.k,JSON.parse(JSON.stringify(getP(RAAS_DEFAULTS,f.k)))));drawGroup()};
-
-/* ---------------- account ---------------- */
-V.account=async()=>{
-  $("#view").innerHTML=`<div class="panel" style="max-width:420px"><h3>${esc(ME.email)}</h3><p class="mut">Role: ${ME.role}</p>
-   <h3 style="margin-top:18px">Change password</h3><label class="f"><span>New password (min 8 characters)</span><input type="password" id="np" autocomplete="new-password"></label><label class="f"><span>Repeat</span><input type="password" id="np2" autocomplete="new-password"></label>
-   <button class="b" data-act="chpw">Update password</button></div>`;
-};
-ACT.chpw=async()=>{const a=$("#np").value;if(a.length<8)throw new Error("Use at least 8 characters");if(a!==$("#np2").value)throw new Error("Passwords do not match");
-  const r=await sb.auth.updateUser({password:a});if(r.error)throw r.error;$("#np").value=$("#np2").value="";toast("Password updated")};
-
-/* ======================================================================
-   NEW: Visual Editor (live preview, per-element fonts, colours, branding),
-        Hero Display, draft / publish, undo / redo, discount tools
-   ====================================================================== */
-const cl=o=>JSON.parse(JSON.stringify(o));
-const setPE=(o,k,v)=>{const p=k.split(".");let a=o;while(p.length>1){const x=p.shift();if(a[x]==null||typeof a[x]!=="object")a[x]={};a=a[x]}a[p[0]]=v};
-const MAXVID=50*1024*1024,MAXIMG=8*1024*1024;
-const FONTL=(RAAS_SCHEMA.find(g=>g.id==="type").fields[0].opts||[]);
-const DEVW={desktop:"100%",tablet:"768px",mobile:"390px"};
-const normDraft=d=>{d.ext=RAAS_extMerge(d.ext);return d};
-const sameJ=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
-
-async function edLoad(){
-  const r=await sb.from("site_config").select("id,data").in("id",["main","draft"]);if(r.error)throw r.error;
-  const m=(r.data.find(x=>x.id==="main")||{}).data||{},d=(r.data.find(x=>x.id==="draft")||{}).data;
-  S.live=normDraft(RAAS_merge(RAAS_DEFAULTS,cl(m)));S.hasDraft=!!d;
-  S.draft=normDraft(RAAS_merge(RAAS_DEFAULTS,cl(d||m)));S.trash=new Set();S.info={};histReset();
+$("#cfoot").addEventListener("click",e=>{if(e.target.closest("#tocheck"))drawCart(true)});
+/* ---------- send each placed order to Google Sheets (never blocks or breaks the real order) ---------- */
+const SHEET_URL="https://script.google.com/macros/s/AKfycbyE1JQ4z7q_CrsU7W76wI-updW2rvbH-xZpdR2cjOogMRVkcpXzIfhYLQXY7i1Gz60/exec";
+const SHEET_SECRET="raas25.netlify.app"; /* must be identical to SECRET in Code.gs */
+function sendToSheet(o){
+  try{
+    fetch(SHEET_URL,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain"},
+      body:JSON.stringify({secret:SHEET_SECRET,...o})}).catch(()=>{});
+  }catch(e){}
 }
-/* ---- undo / redo ---- */
-function histReset(){S.H=[JSON.stringify(S.draft)];S.hp=0}
-function commit(){const j=JSON.stringify(S.draft);if(j===S.H[S.hp]){edStat();return}S.H=S.H.slice(0,S.hp+1);S.H.push(j);if(S.H.length>100)S.H.shift();S.hp=S.H.length-1;histBtns();edStat()}
-let ct;const touch=()=>{pv();clearTimeout(ct);ct=setTimeout(commit,350);edStat(true)};
-function histBtns(){const u=$("#undo"),r=$("#redo");if(u)u.disabled=S.hp<=0;if(r)r.disabled=S.hp>=S.H.length-1}
-function jump(d){clearTimeout(ct);commit();const n=S.hp+d;if(n<0||n>=S.H.length)return;S.hp=n;S.draft=JSON.parse(S.H[n]);edDraw();pv();histBtns();edStat()}
-ACT.undo=()=>jump(-1);ACT.redo=()=>jump(1);
-function edStat(pending){const e=$("#edstat");if(!e)return;
-  const dirty=pending||!sameJ(S.draft,S.live);
-  e.innerHTML=dirty?`<b style="color:#b45309">● Changes not published yet</b>${S.hasDraft?" (a saved draft exists)":""}`:`<span style="color:#047857">● Live website matches this editor</span>`}
-
-V.editor=async()=>{
-  if(ME.role!=="owner")throw new Error("Only owners can change the website");
-  await edLoad();if(S.etab==="wallet"&&S.cur==="editor")S.etab="text";S.etab=S.etab||"text";S.sel=S.sel||"heroTitle";S.dev=S.dev||"desktop";edShell()};
-V.wallet=async()=>{if(ME.role!=="owner")throw new Error("Only owners can change the website");await edLoad();S.etab="wallet";S.dev=S.dev||"desktop";S.sel=S.sel||"heroTitle";edShell()};
-function edShell(){
-  $("#view").innerHTML=`<div class="site"><div class="pane">
-   <div class="panel" style="padding:10px"><div class="tbar"><button class="b o s" id="undo" data-act="undo" title="Undo">↶ Undo</button><button class="b o s" id="redo" data-act="redo" title="Redo">↷ Redo</button>
-     <button class="b o s" data-act="edsave">Save draft</button><button class="b s" data-act="edpub">Publish</button><button class="b d s" data-act="edresetall">Reset all to default</button></div>
-     <div id="edstat" style="font-size:12px;margin-top:8px"></div>
-     ${S.hasDraft?`<div class="mut" style="font-size:12px;margin-top:4px">A saved (unpublished) draft was loaded. <a href="#" data-act="eddrop">Discard draft and load the live version</a></div>`:""}</div>
-   <div class="tabs">${[["text","Text & fonts"],["colours","Colours"],["brand","Branding"],["wallet","Hero media"]].map(t=>`<button class="b o s" data-act="etab" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div>
-   <div class="panel" id="ed"></div></div>
-   <div class="pvw" id="pvw"><div class="bar" style="padding:8px;margin:0;align-items:center">
-     ${["desktop","tablet","mobile"].map(d=>`<button class="b o s" data-act="dev" data-d="${d}">${d[0].toUpperCase()+d.slice(1)}</button>`).join("")}
-     <label class="mut" style="display:flex;gap:6px;align-items:center;font-size:12px"><input type="checkbox" id="selmode" data-chg="selmode" checked> Click an element in the preview to edit it</label>
-     <a class="b o s" href="../index.html" target="_blank" style="text-decoration:none">Open live site</a></div>
-     <iframe id="pv" src="../index.html?preview=1"></iframe></div></div>`;
-  $("#pv").onload=()=>{pv();pvMode();pvHi();pvScroll2()};
-  edDraw();histBtns();edStat();devSet();
+/* one Sheets row per product line. Prices are the ones the server charged (place_order), never the browser's:
+   original_price / discounted_price are PER UNIT; line_total, coupon_discount and final_price are for the whole line (x quantity);
+   total is the whole order (all lines - coupon + delivery). */
+function sheetOrder(data,f,lines){
+  const srv=Array.isArray(data.items)&&data.items.length?data.items:null;
+  let items;
+  if(srv)items=srv.map(l=>({product:l.name,colour:l.colour||"",size:l.size||"",quantity:+l.qty,
+      original_price:+(l.original??l.unit),discounted_price:+l.unit,price:+l.unit,line_total:+(l.line_total??l.unit*l.qty),
+      coupon_discount:+(l.coupon_discount||0),final_price:+(l.final??l.unit*l.qty)}));
+  else{   // database not updated yet: same fields from the cart, coupon spread over the lines by value
+    const sub=lines.reduce((a,i)=>a+(i.price||0)*i.qty,0),d=+data.discount||0;let left=d;
+    items=lines.map((i,n)=>{const p=prodOf(i),lt=(i.price||0)*i.qty,sh=n===lines.length-1?left:Math.min(left,sub?Math.round(d*lt/sub):0);left-=sh;
+      return {product:i.name,colour:i.colour||"",size:i.size||"",quantity:i.qty,original_price:p&&p.price!=null?p.price:i.price,discounted_price:i.price,price:i.price,
+        line_total:lt,coupon_discount:sh,final_price:lt-sh}});
+  }
+  return {order_id:"#"+data.number,date:data.created_at||new Date().toISOString(),name:f.get("name"),phone:f.get("phone"),
+    address:f.get("addr")+", "+f.get("city"),city:f.get("city"),coupon:data.coupon||"",coupon_discount:+data.discount||0,
+    delivery:+data.delivery||0,subtotal:+data.subtotal||0,total:+data.total||0,items};
 }
-function devSet(){const f=$("#pv");if(!f)return;f.style.transition="none";f.style.width=DEVW[S.dev];f.style.borderInline=S.dev==="desktop"?"0":"1px solid var(--line)";$$("[data-act=dev]").forEach(b=>b.classList.toggle("on",b.dataset.d===S.dev))}
-ACT.dev=a=>{S.dev=a.dataset.d;devSet()};
-const pvPost=m=>{const f=$("#pv");f&&f.contentWindow&&f.contentWindow.postMessage(m,"*")};
-const pvMode=()=>{const c=$("#selmode");pvPost({raasMode:{select:c?c.checked:true}})};
-CHG.selmode=()=>pvMode();
-const pvHi=()=>{if(S.etab==="text"){pvPost({raasHi:S.sel});pvPost({raasStyle:S.sel})}else pvPost({raasHi:null})};
-const pvScroll2=()=>{if(S.etab==="wallet"||S.etab==="brand")pvPost({raasScroll:""})};
-ACT.etab=a=>{clearTimeout(ct);commit();S.etab=a.dataset.tab;edDraw();pvHi();pvScroll2()};
-ACT.eddrop=async(a,e)=>{e.preventDefault();if(!confirm("Delete the saved draft and load the live version?"))return;const r=await sb.from("site_config").delete().eq("id","draft");if(r.error)throw r.error;await edLoad();edShell();toast("Draft discarded")};
-
-/* ---- field builders (all use data-ek = config path(s), "|" separates several paths set together) ---- */
-const eK=k=>`data-ek="${k}"`;
-const eTxt=(l,k,kind)=>{const v=getP(S.draft,k);
-  if(kind==="list")return `<label class="f"><span>${esc(l)} (one per line)</span><textarea rows="3" ${eK(k)} data-et="list">${esc((v||[]).join("\n"))}</textarea></label>`;
-  if(kind==="textarea")return `<label class="f"><span>${esc(l)}</span><textarea rows="3" ${eK(k)} data-et="str">${esc(v)}</textarea></label>`;
-  return `<label class="f"><span>${esc(l)}</span><input ${eK(k)} data-et="str" value="${esc(v)}"></label>`};
-const eNum=(l,k,ph,step)=>`<label class="f"><span>${esc(l)}</span><input type="number" min="0" step="${step||1}" ${eK(k)} data-et="num" value="${esc(getP(S.draft,k)??"")}" placeholder="${esc(ph||"")}"></label>`;
-const eSel=(l,k,opts)=>{const v=String(getP(S.draft,k)??"");return `<label class="f"><span>${esc(l)}</span><select ${eK(k)} data-et="str">${opts.map(o=>`<option value="${esc(o[0])}" ${String(o[0])===v?"selected":""}>${esc(o[1])}</option>`).join("")}</select></label>`};
-const eTog=(l,k)=>`<label class="tg"><input type="checkbox" ${eK(k)} data-et="toggle" ${getP(S.draft,k)?"checked":""}> ${esc(l)}</label>`;
-const eRng=(l,k,min,max,step)=>{const v=getP(S.draft,k);return `<label class="f"><span>${esc(l)}</span><div class="cp"><input type="range" min="${min}" max="${max}" step="${step}" ${eK(k)} data-et="num" value="${v}"><output style="min-width:44px">${v}</output></div></label>`};
-const eCol=(l,k,def,clr)=>{const keys=k.split("|"),v=getP(S.draft,keys[0])||"";
-  return `<div class="f"><span>${esc(l)}${clr?` <a href="#" data-act="eclr" data-k="${k}" data-def="${def}">${v?"reset":"(default)"}</a>`:""}</span><div class="cp"><input type="color" ${eK(k)} data-et="color" value="${esc(v||def)}"><input ${eK(k)} data-et="color" value="${esc(v)}" maxlength="7" placeholder="${def}"></div></div>`};
-const eMed=(l,k,kind,folder)=>{const v=getP(S.draft,k)||"";
-  return `<div class="f"><span>${esc(l)}</span><input ${eK(k)} data-et="str" value="${esc(v)}" placeholder="https://… or upload"><div class="mrow"><label class="b o s">${v?"Replace":"Upload"}<input type="file" hidden accept="${kind==="video"?"video/mp4,video/webm":"image/*"}" data-chg="emup" data-k="${k}" data-kind="${kind}" data-folder="${folder}"></label><button class="b d s" data-act="emdel" data-k="${k}">Delete</button></div>${v?(kind==="video"?`<video src="${esc(v)}" muted controls playsinline style="height:90px;background:#000"></video>`:`<img src="${esc(v)}" style="height:56px;background:#eee;border:1px solid var(--line)">`):""}</div>`};
-
-function edDraw(){
-  $$("[data-act=etab]").forEach(b=>b.classList.toggle("on",b.dataset.tab===S.etab));
-  const h={text:tabText,colours:tabColours,brand:tabBrand,wallet:tabWallet}[S.etab]||tabText;
-  $("#ed").innerHTML=h();
-  const v=$("#wprev");if(v){const w=S.draft.ext.wallet;v.loop=w.loop!==false;v.playbackRate=+w.speed||1;v.addEventListener("loadedmetadata",()=>{v.playbackRate=+S.draft.ext.wallet.speed||1})}
-}
-/* ---- tab: text & fonts ---- */
-function tabText(){
-  const els=RAAS_ELEMENTS,el=els.find(e=>e.id===S.sel)||els[0],id=el.id,P="ext.styles."+id+".",inf=(S.info&&S.info[id])||{};
-  const groups=[...new Set(els.map(e=>e.g))];
-  const FAM=[["","(site default)"],...FONTL.map(f=>[f,f])];
-  return `<h3>Edit any element</h3>
-  <label class="f"><span>Element (or click it in the preview)</span><select data-chg="elsel">${groups.map(g=>`<optgroup label="${g}">${els.filter(e=>e.g===g).map(e=>`<option value="${e.id}" ${e.id===id?"selected":""}>${e.l}</option>`).join("")}</optgroup>`).join("")}</select></label>
-  ${el.text?eTxt("Text",el.text,el.kind):`<p class="mut" style="margin-bottom:10px">${esc(el.note||"")}</p>`}
-  <h3 style="margin:14px 0 8px">Style</h3>
-  <div class="r3">${eNum("Size – desktop (px)",P+"size",inf.size?Math.round(inf.size):"")}${eNum("Tablet (px)",P+"sizeT")}${eNum("Mobile (px)",P+"sizeM")}</div>
-  <div class="r2">${eSel("Font",P+"family",FAM)}${eSel("Weight",P+"weight",[["","(default)"],["400","Regular"],["500","Medium"],["600","Semi-bold"],["700","Bold"]])}</div>
-  ${eCol("Text colour",P+"color",toHex(inf.color)||"#000000",true)}
-  <div class="r3">${eSel("Alignment",P+"align",[["","(default)"],["left","Left"],["center","Centre"],["right","Right"],["justify","Justify"]])}${eNum("Line height",P+"lh","e.g. 1.4",.05)}${eNum("Letter spacing (px)",P+"ls","e.g. 1",.1)}</div>
-  <div class="acts" style="justify-content:flex-start;margin-top:4px"><button class="b o s" data-act="elreset">Reset this element</button><button class="b o s" data-act="elresetall">Reset all element styles</button></div>
-  <details style="margin-top:18px"><summary style="cursor:pointer;font-weight:600">More content: contact, delivery and policies</summary><div style="margin-top:10px">
-   ${eTxt("Email","contact.email")}${eTxt("Phone","contact.phone")}${eTxt("WhatsApp number","contact.whatsapp")}${eTxt("Store address","contact.address")}
-   ${eTxt("Instagram URL","contact.instagram")}${eTxt("Facebook URL","contact.facebook")}${eTxt("TikTok URL","contact.tiktok")}${eTxt("YouTube URL","contact.youtube")}
-   ${eTxt("Delivery information","delivery.info","textarea")}${eTxt("Privacy Policy","policies.privacy","textarea")}${eTxt("Return and Exchange Policy","policies.returns","textarea")}
-   <p class="mut">Menu, button and label wording not listed here: <a href="#site" data-go="site">Website → All website texts</a>.</p></div></details>`;
-}
-function toHex(c){const m=/rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c||"");return m?"#"+[m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,"0")).join(""):""}
-CHG.elsel=t=>{S.sel=t.value;edDraw();pvHi()};
-ACT.elreset=()=>{const el=RAAS_ELEMENTS.find(e=>e.id===S.sel);delete S.draft.ext.styles[S.sel];if(el&&el.text)setPE(S.draft,el.text,cl(getP(RAAS_DEFAULTS,el.text)));edDraw();touch();commit()};
-ACT.elresetall=()=>{if(!confirm("Remove the custom font / size / colour of EVERY element?"))return;S.draft.ext.styles={};edDraw();touch();commit()};
-/* ---- tab: colours ---- */
-const CF=[["Primary background","look.bg","#0b0b0a","Header, hero, products, product page and footer"],
- ["Secondary / section background","look.section","#141412","Announcement bar, about, sale strip and cart"],
- ["Main text","look.text","#f6f4ef","Headings and text. Softer greys and lines are made from it automatically"],
- ["Accent / button","look.accent","#f7d98b","Buttons, highlights, badges. Button text turns dark or light automatically"]];
-function tabColours(){return `<h3>Website colours</h3><p class="mut" style="margin-bottom:12px">Just 4 colours control the whole website. Pick a colour or type a HEX code; the preview changes instantly. Press <b>Publish</b> to make it live.</p>
-  <div class="swatch" style="display:flex;height:34px;border-radius:8px;overflow:hidden;margin-bottom:14px;border:1px solid var(--line)">${CF.map(c=>`<i style="flex:1;background:${esc(getP(S.draft,c[1])||c[2])}"></i>`).join("")}</div>
-  ${CF.map(c=>eCol(c[0],c[1],c[2],true)+`<p class="mut" style="font-size:12px;margin:-4px 0 12px">${c[3]}</p>`).join("")}
-  <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="colreset">Reset to the reference colours</button></div>`}
-const colDefault=(k,def)=>k.startsWith("ext.")?"":getP(RAAS_DEFAULTS,k);
-ACT.eclr=(a,e)=>{e.preventDefault();a.dataset.k.split("|").forEach(k=>setPE(S.draft,k,k.startsWith("ext.styles")?"":colDefault(k)));edDraw();touch();commit()};
-ACT.colreset=()=>{CF.forEach(c=>c[1].split("|").forEach(k=>setPE(S.draft,k,colDefault(k))));edDraw();touch();commit()};
-/* ---- tab: branding ---- */
-function tabBrand(){return `<h3>Name, logo and branding</h3><p class="mut" style="margin-bottom:10px">Changes apply everywhere the brand appears: header, footer, product page, browser tab, loader, copyright line.</p>
-  ${eTxt("Website / brand name","brand.name")}${eTog("Use the brand name in the curtain, copyright line and “About” heading (when those still have the original wording)","ext.brand.syncName")}
-  ${eMed("Header logo (also shown on the product page)","brand.logoUrl","image","branding")}${eRng("Header logo height (px)","brand.logoHeight",16,80,1)}
-  ${eMed("Footer logo (empty = header logo)","brand.footerLogoUrl","image","branding")}${eRng("Footer logo height (px)","brand.footerLogoHeight",16,80,1)}
-  ${eMed("Favicon (browser tab icon, PNG/ICO/SVG)","ext.brand.favicon","image","branding")}
-  ${eTxt("Website tagline","ext.brand.tagline")}${eTxt("Brand description (search engines; footer if the footer text is empty)","ext.brand.description","textarea")}
-  <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="brandreset">Reset branding to default</button></div>`}
-ACT.brandreset=()=>{S.draft.brand=cl(RAAS_DEFAULTS.brand);S.draft.ext.brand=cl(RAAS_EXT_DEFAULTS.brand);edDraw();touch();commit()};
-/* ---- tab: 360 wallet ---- */
-function tabWallet(){
-  const h=S.draft.hero,w=S.draft.ext.wallet,lv=S.live.hero.video,st=!h.video?"No hero video uploaded":(h.video===lv&&sameJ(S.live.ext.wallet,w)?"Live on the website":"Not published yet – press Publish");
-  return `<h3>Hero Display / Hero Media</h3>
-  <p class="mut" style="margin-bottom:10px">Upload a video of your clothing (model or product). After <b>Publish</b> it replaces the picture in the homepage hero and loops continuously.</p>
-  ${eTog("Show the hero video on the homepage","ext.wallet.enabled")}
-  <div class="f"><span>Hero video (MP4 or WebM, max 50 MB) – <b>${st}</b></span>
-   ${h.video?`<video id="wprev" src="${esc(h.video)}" muted controls playsinline autoplay loop style="width:100%;max-height:230px;border-radius:6px;background:repeating-conic-gradient(#d9d9d9 0 25%,#fff 0 50%) 0 0/18px 18px"></video>
-   <div id="wstat" class="wstat">${wStatHTML(h.video)}</div><div class="mut" style="font-size:12px;word-break:break-all">${esc(h.video)}</div>`:`<div class="mut" style="padding:20px;border:1px dashed #aaa;text-align:center">No video yet. The current image / built-in wallet is shown.</div>`}
-   <div class="mrow"><label class="b s" id="wvbtn">${h.video?"Replace video":"Upload hero video"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.video"></label>
-   ${h.video?`<button class="b d s" data-act="emdel" data-k="hero.video">Delete video</button>`:""}</div></div>
-  <h3 style="margin:14px 0 8px">Transparent background</h3>
-  ${eSel("Background removal","ext.wallet.bgMode",[["auto","Automatic (recommended)"],["key","Always remove the solid background colour"],["none","Off – show the video exactly as uploaded"]])}
-  ${eRng("Removal strength (raise it if a thin edge of background remains, lower it if parts of the wallet disappear)","ext.wallet.tolerance",4,60,1)}
-  <div class="f"><span>Transparent copy for iPhone / Safari (optional, HEVC with alpha .mov / .mp4)</span>
-   <div class="mrow"><label class="b o s">${w.hevc?"Replace":"Upload"}<input type="file" hidden accept="video/quicktime,video/mp4,.mov,.mp4" data-chg="wvup" data-k="ext.wallet.hevc"></label>${w.hevc?`<button class="b d s" data-act="emdel" data-k="ext.wallet.hevc">Delete</button>`:""}</div>
-   ${w.hevc?`<div class="mut" style="font-size:12px;word-break:break-all">${esc(w.hevc)}</div>`:""}
-   <p class="mut" style="font-size:12px;margin-top:6px">Safari and iPhones cannot show transparency in WebM files. Without this copy the website removes the background automatically on those devices instead.</p></div>
-  <h3 style="margin:14px 0 8px">Playback</h3>
-  ${eTog("Autoplay","ext.wallet.autoplay")}${eTog("Loop continuously","ext.wallet.loop")}${eRng("Playback speed (1 = normal)","ext.wallet.speed",.25,2,.05)}
-  <h3 style="margin:14px 0 8px">Fallback &amp; phones</h3>
-  ${eMed("Fallback hero image (shown if the animation is off or the video cannot load)","hero.image","image","hero-wallet")}
-  <div class="f"><span>Lighter video for phones (optional)</span>${h.videoMobile?`<video src="${esc(h.videoMobile)}" muted controls playsinline style="height:80px;background:#000"></video>`:""}<div class="mrow"><label class="b o s">${h.videoMobile?"Replace":"Upload"}<input type="file" hidden accept="video/mp4,video/webm,.mp4,.webm" data-chg="wvup" data-k="hero.videoMobile"></label>${h.videoMobile?`<button class="b d s" data-act="emdel" data-k="hero.videoMobile">Delete</button>`:""}</div></div>
-  <div class="acts" style="justify-content:flex-start"><button class="b o s" data-act="wreset">Reset playback settings</button></div>
-  <p class="mut" style="font-size:12px;margin-top:8px">The preview on the right shows the uploaded video straight away, before it goes live. Use “Save draft” to keep it for later or “Publish” to put it on the live website.</p>`}
-/* checks whether the wallet video really has a transparent background */
-S.wInfo=S.wInfo||{};
-function wStatHTML(u){const r=S.wInfo[u];
-  if(!r){if(u&&window.RAAS_analyzeVideo){S.wInfo[u]={kind:"checking"};RAAS_analyzeVideo(u).then(x=>{S.wInfo[u]=x;const e=$("#wstat");if(e&&S.draft.hero.video===u)e.innerHTML=wStatHTML(u)})}return wMsg({kind:"checking"})}
-  return wMsg(r)}
-function wMsg(r){const M={
-  checking:["#6b7280","Checking the video background…"],
-  alpha:["#047857","✓ Real transparent video (alpha channel). Only the product is shown on the website. For iPhone / Safari also upload the HEVC copy below, or the background is removed automatically there."],
-  solid:["#b45309",`This file has no transparency – it has a solid ${r.hex?`<span style="display:inline-block;width:11px;height:11px;border:1px solid #999;vertical-align:-1px;background:${r.hex}"></span> ${r.hex}`:""} background (normal for MP4). The website removes this background automatically and shows only the wallet. For the cleanest edges export a WebM with alpha.`],
-  scene:["#b91c1c","This video has no transparency and its background is not one plain colour, so it cannot be removed cleanly. Please export the video with a transparent background (WebM VP9 with alpha) or on one plain colour."],
-  blocked:["#b45309","The video could not be inspected here (storage blocked pixel access). It will still play."],
-  error:["#b91c1c","This video could not be read by the browser."],unknown:["#6b7280","Could not check the video in time."]}[r.kind]||["#6b7280",""];
-  return `<p style="font-size:12.5px;margin:6px 0;color:${M[0]}">${M[1]}</p>`}
-ACT.wreset=()=>{S.draft.ext.wallet=cl(RAAS_EXT_DEFAULTS.wallet);syncType();edDraw();touch();commit()};
-function syncType(){const h=S.draft.hero,w=S.draft.ext.wallet;h.mediaType=(w.enabled!==false&&(h.video||h.videoMobile))?"video":(h.image?"image":"3d")}
-function probeVideo(file){return new Promise((res,rej)=>{const v=document.createElement("video"),u=URL.createObjectURL(file),msg="This video cannot be read by the browser. Please export it as H.264 MP4 or WebM.";
-  const tm=setTimeout(()=>done(rej,new Error(msg)),12000),done=(f,x)=>{clearTimeout(tm);URL.revokeObjectURL(u);f(x)};
-  v.preload="metadata";v.muted=true;v.onloadedmetadata=()=>done(res,{w:v.videoWidth,h:v.videoHeight,d:v.duration});v.onerror=()=>done(rej,new Error(msg));v.src=u})}
-const trashOld=u=>{if(u&&String(u).includes("/storage/v1/object/public/media/"))S.trash.add(u)};
-CHG.wvup=async t=>{
-  const f=t.files[0];t.value="";if(!f)return;
-  const isH=t.dataset.k==="ext.wallet.hevc";
-  if(isH){if(!/\.(mov|mp4)$/i.test(f.name))throw new Error("The iPhone / Safari copy must be a .mov or .mp4 (HEVC with alpha).")}
-  else if(!/\.(mp4|webm)$/i.test(f.name)||(f.type&&!/^video\/(mp4|webm)$/.test(f.type)))throw new Error("Only MP4 or WebM videos are allowed.");
-  if(f.size>MAXVID)throw new Error("This video is "+(f.size/1048576).toFixed(1)+" MB. The limit is 50 MB. Please compress it.");
-  if(f.size<1000)throw new Error("This file looks empty or damaged.");
-  const k=t.dataset.k,btn=$("#wvbtn");toast("Checking video…");const m=isH?await probeVideo(f).catch(()=>({w:"?",h:"?",d:NaN})):await probeVideo(f);
-  let info=null;if(!isH&&window.RAAS_analyzeVideo){const u=URL.createObjectURL(f);info=await RAAS_analyzeVideo(u);URL.revokeObjectURL(u)}
-  toast("Uploading "+(f.size/1048576).toFixed(1)+" MB… please wait");if(btn)btn.style.opacity=.5;
-  try{const url=await up(f,"hero-wallet");trashOld(getP(S.draft,k));setPE(S.draft,k,url);if(info)S.wInfo[url]=info;
-    if(k==="hero.video")S.draft.ext.wallet.enabled=true;syncType();
-    edDraw();touch();commit();toast(`Video ready (${m.w}×${m.h}${isFinite(m.d)?", "+m.d.toFixed(1)+"s":""}). Check the preview, then press Publish.`)}
-  finally{if(btn)btn.style.opacity=1}
-};
-CHG.emup=async t=>{
-  const f=t.files[0];t.value="";if(!f)return;
-  if(t.dataset.kind==="image"){if(!/^image\//.test(f.type)&&!/\.(ico|svg)$/i.test(f.name))throw new Error("Please choose an image file.");if(f.size>MAXIMG)throw new Error("Image is larger than 8 MB.")}
-  toast("Uploading…");const url=await up(f,t.dataset.folder||"branding"),k=t.dataset.k;trashOld(getP(S.draft,k));setPE(S.draft,k,url);
-  if(k==="hero.image")syncType();edDraw();touch();commit();toast("Uploaded")};
-ACT.emdel=a=>{const k=a.dataset.k;if(!confirm("Delete this file? It is removed from the website when you press Publish."))return;trashOld(getP(S.draft,k));setPE(S.draft,k,"");if(k.startsWith("hero."))syncType();edDraw();touch();commit()};
-
-/* ---- one input handler for every editor field ---- */
-function ecoerce(t){switch(t.dataset.et){case"toggle":return t.checked;case"num":return t.value===""?"":+t.value;case"list":return t.value.split("\n").map(x=>x.trim()).filter(Boolean);default:return t.value}}
-document.addEventListener("input",e=>{
-  const t=e.target,ed=t.closest&&t.closest("#ed");if(!ed||!t.dataset.ek)return;
-  let v=ecoerce(t);const keys=t.dataset.ek.split("|");
-  if(t.dataset.et==="color"){if(v!==""&&!/^#[0-9a-f]{6}$/i.test(v))return;$$(`[data-ek="${t.dataset.ek}"]`,ed).forEach(x=>{if(x!==t)x.value=v||(x.type==="color"?x.value:"")})}
-  if(t.type==="range"){const o=t.parentElement.querySelector("output");if(o)o.textContent=v}
-  keys.forEach(k=>setPE(S.draft,k,v));
-  if(t.dataset.ek==="ext.wallet.enabled")syncType();
-  if(t.dataset.ek.startsWith("look.")){const sw=ed.querySelector(".swatch");if(sw)[...sw.children].forEach((x,i)=>x.style.background=getP(S.draft,CF[i][1])||CF[i][2])}
-  const pr=$("#wprev");if(pr){if(t.dataset.ek==="ext.wallet.speed")pr.playbackRate=+v||1;if(t.dataset.ek==="ext.wallet.loop")pr.loop=!!v}
-  touch();
+$("#cfoot").addEventListener("submit",async e=>{e.preventDefault();
+  const note=$("#conote"),f=new FormData(e.target),btn=e.target.querySelector("button");
+  if(!sb){note.textContent=T("noBackend");return}
+  if(cart.some(i=>!i.cid)){note.textContent="Some items cannot be ordered right now.";return}
+  const nosz=cart.find(sizeBad);if(nosz){note.textContent=T("sizeRequired")+" ("+nosz.name+")";return}
+  /* a code typed but not applied yet: check it first so the customer sees the new total before ordering */
+  const typed=$("#cpin")?$("#cpin").value.trim():"";
+  if(!COUPON&&typed){note.textContent="";if(await applyCoupon(typed))note.textContent=T("couponCheckTotal");return}
+  if(COUPON&&COUPON.sig!==cartSig()&&!(await applyCoupon(COUPON.code,true)))return;
+  btn.disabled=true;
+  const {data,error}=await sb.rpc("place_order",{payload:{name:f.get("name"),phone:f.get("phone"),address:f.get("addr"),city:f.get("city"),coupon:COUPON?COUPON.code:"",items:cart.map(i=>({colour_id:i.cid,qty:i.qty,size:i.size||""}))}});
+  btn.disabled=false;
+  if(error){note.textContent=friendlyErr(error);
+    if(COUPON&&/discount code/i.test(error.message||"")){const c=COUPON.code;COUPON=null;drawCoupon();drawTotals();couponMsg(T("couponRemoved").replace("{c}",c)+" "+error.message);note.textContent=T("couponCheckTotal")}
+    return}
+  sendToSheet(sheetOrder(data,f,cart));
+  cart=[];COUPON=null;save();drawCart();
+  $("#cbody").innerHTML=`<p class="empty">${esc(T("orderDone")).replace("{n}","#"+data.number)}</p>`;
+  $("#cfoot").innerHTML=(+data.discount>0?`<div class="row"><span>${T("subtotal")}</span><span>${pkr(data.subtotal)}</span></div><div class="row disc"><span>${T("discountLbl")} (${esc(data.coupon||"")})</span><span>−${pkr(data.discount)}</span></div>`:"")+
+    `<div class="row tot"><span>${T("total")} (${T("cod")})</span><span>PKR ${Number(data.total).toLocaleString("en-PK")}</span></div>`;
 });
+const openCart=c=>{drawCart(c);$("#drawer").scrollTop=0;$("#drawer").classList.add("on");$("#shade").classList.add("on");document.body.classList.add("nosc")};
+const closeCart=()=>{$("#drawer").classList.remove("on");$("#shade").classList.remove("on");document.body.classList.remove("nosc")};
+$("#cbtn").onclick=()=>openCart();$("#cclose").onclick=closeCart;$("#shade").onclick=closeCart;
+addEventListener("keydown",e=>{if(e.key==="Escape"){closeCart();closeProduct()}});
+
+/* ---------- motion: scroll reveal, header, cursor, hero tilt ---------- */
+let io; function observe(){
+  io=io||new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add("in");io.unobserve(x.target)}}),{threshold:.12});
+  $$(".rv:not(.in)").forEach(el=>io.observe(el));
+}
+addEventListener("scroll",()=>$("#hdr").classList.toggle("stuck",scrollY>10),{passive:true});
+const cur$=$("#cur");
+addEventListener("pointermove",e=>{cur$.style.left=e.clientX+"px";cur$.style.top=e.clientY+"px";cur$.classList.toggle("big",!!e.target.closest(".pc,.view"))});
+/* ---------- hero media: image / video / 3D, with 3D-turn transitions between views ---------- */
+const mq=matchMedia("(max-width:900px)"),RM=matchMedia("(prefers-reduced-motion:reduce)");
+let vIdx=0,vTimer=null,vList=[];
+function mediaList(){
+  const m=HERO_MEDIA,mob=mq.matches,img=(mob&&m.imageMobile)||m.image||SETTINGS.hero.image;
+  if(m.type==="video"&&(m.video||m.videoMobile))return [{kind:"video",src:(mob&&m.videoMobile)||m.video,poster:m.poster}];
+  const l=[]; if(m.type!=="3d"||img){ if(img)l.push({kind:"image",src:img,label:"Front"}); (m.views||[]).forEach(v=>l.push({kind:"image",src:(mob&&v.mobile)||v.src,label:v.label||""})) }
+  return l.length?l:[{kind:"3d"}];
+}
+function mvHTML(v){
+  const inner=v.kind==="3d"?`<div class="card3d">${hero3d()}</div>`
+    :v.kind==="video"?`<video src="${v.src}" ${v.poster?`poster="${v.poster}"`:""} muted loop playsinline preload="metadata" ${RM.matches?"":"autoplay"}></video>`
+    :`<img src="${v.src}" alt="RAAS ${v.label||""}" decoding="async">`;
+  return `<div class="fl">${inner}</div>`;
+}
+function buildMedia(){
+  const m=$("#media"); clearInterval(vTimer); vList=mediaList(); vIdx=0;
+  m.innerHTML=`<div class="mv first">${mvHTML(vList[0])}</div>`;
+  $("#vdots").innerHTML=vList.length>1?vList.map((v,i)=>`<button class="${i?"":"on"}" data-v="${i}">${v.label||i+1}</button>`).join(""):"";
+  if(vList.length>1&&!RM.matches)vTimer=setInterval(()=>goView(vIdx+1),HERO_MEDIA.interval||4800);
+}
+function goView(i){
+  const m=$("#media"),old=m.querySelector(".mv:not(.out)"),n=((i%vList.length)+vList.length)%vList.length;
+  if(n===vIdx)return;
+  vIdx=n; const el=document.createElement("div"); el.className="mv in"; el.innerHTML=mvHTML(vList[n]); m.appendChild(el);
+  if(old){old.classList.add("out");setTimeout(()=>old.remove(),950)}
+  $$("#vdots button").forEach((b,k)=>b.classList.toggle("on",k===n));
+  const s=$("#stage"); s.classList.remove("ping"); void s.offsetWidth; s.classList.add("ping");   // ring ripples on every view change
+}
+$("#vdots").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b){clearInterval(vTimer);goView(+b.dataset.v)}});
+mq.addEventListener("change",buildMedia);
+const st=$("#stage");
+st.addEventListener("pointermove",e=>{const r=st.getBoundingClientRect();st.style.setProperty("--px",((e.clientX-r.left)/r.width-.5).toFixed(3));st.style.setProperty("--py",((e.clientY-r.top)/r.height-.5).toFixed(3))});
+st.addEventListener("pointerleave",()=>{st.style.setProperty("--px",0);st.style.setProperty("--py",0)});
+let raf=0; addEventListener("scroll",()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;$(".hero").style.setProperty("--sy",Math.min(scrollY,1000))})},{passive:true});
+/* loader curtain lifts, then hero animations start */
+function reveal(){const l=$("#loader");if(document.body.classList.contains("ready"))return;l.classList.add("go");document.body.classList.add("ready");setTimeout(()=>l.classList.add("gone"),1300)}
+
+
+/* magnetic buttons: they lean toward the pointer */
+document.addEventListener("pointermove",e=>{
+  const b=e.target.closest&&e.target.closest(".btn"); if(!b||e.pointerType!=="mouse"||CFG.motion.magnetic===false)return;
+  const r=b.getBoundingClientRect();
+  b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.18}px,${(e.clientY-r.top-r.height/2)*.3}px)`;
+});
+document.addEventListener("pointerout",e=>{const b=e.target.closest&&e.target.closest(".btn");if(b)b.style.transform=""});
+
+/* ---------- apply configuration (also used by the admin live preview) ---------- */
+const fontsLoaded=new Set(["Plus Jakarta Sans","Inter"]);
+/* weights/italics each Google font really has (asking for one it lacks makes Google return nothing) */
+const FSPEC={"Plus Jakarta Sans":"ital,wght@0,200..800;1,200..800","Inter Tight":"ital,wght@0,200..800;1,200..800","Inter":"wght@300..700","Manrope":"wght@200..800",
+  "DM Sans":"ital,wght@0,200..800;1,200..800","Urbanist":"ital,wght@0,200..800;1,200..800","Outfit":"wght@200..800","Sora":"wght@200..800",
+  "Montserrat":"ital,wght@0,200..800;1,200..800","Jost":"ital,wght@0,200..800;1,200..800","Work Sans":"ital,wght@0,200..800;1,200..800",
+  "Poppins":"ital,wght@0,300;0,400;0,500;0,600;0,700;1,200;1,300;1,400","Cormorant Garamond":"ital,wght@0,300..700;1,300..700",
+  "Playfair Display":"ital,wght@0,400..800;1,400..800","Cinzel":"wght@400..800","DM Serif Display":"ital@0;1","Libre Baskerville":"ital,wght@0,400;0,700;1,400"};
+function loadFonts(list){list.forEach(n=>{if(!n||fontsLoaded.has(n))return;fontsLoaded.add(n);const l=document.createElement("link");l.rel="stylesheet";l.href="https://fonts.googleapis.com/css2?family="+encodeURIComponent(n).replace(/%20/g,"+")+":"+(FSPEC[n]||"wght@400;500;600;700")+"&display=swap";document.head.appendChild(l)})}
+const SERIFS=["Cormorant Garamond","Playfair Display","Cinzel","DM Serif Display","Libre Baskerville"];
+const fam=n=>`'${String(n).replace(/[^a-zA-Z0-9 ]/g,"")}',${SERIFS.includes(n)?"Georgia,serif":"system-ui,sans-serif"}`;
+const okHex=v=>/^#[0-9a-f]{6}$/i.test(v||"");
+/* readable text colour on top of a colour (dark text on a light accent, white on a dark accent) */
+const onColour=h=>{const n=parseInt(h.slice(1),16),c=[n>>16,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]>.36?"#16140f":"#ffffff"};
+function logoHTML(url,h){return url?`<img src="${esc(url)}" alt="${esc(CFG.brand.name)}" style="height:${+h||28}px">`:esc(CFG.brand.name)}
+function applyTheme(){
+  const t=CFG.theme,r=document.documentElement.style,sp=(+t.spacing||100)/100;
+  const m={"--primary":t.primary,"--secondary":t.secondary,"--bg":t.bg,"--text":t.text,"--btn":t.btn,"--btn-text":t.btnText,"--header":t.header,"--footer":t.footer,"--accent":t.accent,
+    "--radius":(+t.radius||0)+"px","--space":`clamp(${64*sp}px,${9*sp}vw,${120*sp}px)`,"--hs":(+t.headSize||100)/100,"--bs":(+t.bodySize||15)+"px",
+    "--head":`'${t.headFont}',Georgia,serif`,"--body":`'${t.bodyFont}',system-ui,sans-serif`,"--k":1/(+CFG.motion.speed||1)};
+  const sc=CFG.secColors,z=CFG.sizes,P=v=>(+v||100)/100;
+  Object.assign(m,{"--head-text":sc.headText,"--ann-bg":sc.annBg,"--ann-text":sc.annText,"--hero-bg":sc.heroBg,"--hero-text":sc.heroText,"--tick-bg":sc.tickBg,"--tick-text":sc.tickText,"--sale-bg":sc.saleBg,"--sale-text":sc.saleText,"--shop-bg":sc.shopBg,"--shop-text":sc.shopText,"--about-bg":sc.aboutBg,"--about-text":sc.aboutText,"--foot-text":sc.footText,"--pdp-bg":sc.pdpBg,
+    "--z-hero":P(z.heroTitle),"--z-herod":P(z.heroDesc),"--z-sec":P(z.sectionTitle),"--z-nav":P(z.nav),"--z-btn":P(z.button),"--z-ann":P(z.announce),"--z-tick":P(z.ticker),"--z-card":P(z.cardName),"--z-price":P(z.cardPrice),"--z-pdp":P(z.pdpTitle),"--z-pdpp":P(z.pdpPrice),"--z-about":P(z.about),"--z-foot":P(z.footer)});
+  /* the 4 simple website colours + fonts (Admin > Website colours / Typography) drive the whole design */
+  const L=Object.assign({},D.look,CFG.look||{}),dl=D.look;
+  const c4={bg:okHex(L.bg)?L.bg:dl.bg,bg2:okHex(L.section)?L.section:dl.section,text:okHex(L.text)?L.text:dl.text,acc:okHex(L.accent)?L.accent:dl.accent};
+  ["--primary","--secondary","--bg","--text","--btn","--btn-text","--header","--footer","--accent"].forEach(k=>delete m[k]);
+  Object.assign(m,{"--bg":c4.bg,"--bg2":c4.bg2,"--text":c4.text,"--acc":c4.acc,"--acc-text":onColour(c4.acc),
+    "--head":fam(L.headFont||dl.headFont),"--body":fam(L.bodyFont||dl.bodyFont),"--radius":(L.radius===""||L.radius==null?dl.radius:+L.radius)+"px"});
+  for(const k in m)r.setProperty(k,m[k]);
+  const tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.content=c4.bg;
+  loadFonts([L.headFont||dl.headFont,L.bodyFont||dl.bodyFont]);
+  document.title=CFG.brand.name+" — Modern Clothing";
+  $("#logo").innerHTML=logoHTML(CFG.brand.logoUrl,CFG.brand.logoHeight);
+  $$(".logo[data-close]").forEach(a=>a.innerHTML=logoHTML(CFG.brand.logoUrl,CFG.brand.logoHeight));
+  $("#flogo").innerHTML=logoHTML(CFG.brand.footerLogoUrl||CFG.brand.logoUrl,CFG.brand.footerLogoHeight);
+  $("#grid").classList.toggle("g3",+t.columns===3);
+  $("#loader span").innerHTML=CFG.motion.loaderImage?`<img src="${esc(CFG.motion.loaderImage)}" alt="" style="height:80px;width:auto">`:esc(CFG.motion.loaderText);
+}
+function applyTexts(){
+  $$("[data-t]").forEach(e=>e.textContent=T(e.dataset.t));
+  $$("[data-tp]").forEach(e=>e.placeholder=T(e.dataset.tp));
+}
+function applySections(){
+  const map={ticker:$(".ticker"),sale:$("#sale"),banner:$("#banner"),shop:$("#shop"),about:$("#about")},main=$("#top");
+  (CFG.sections||[]).forEach(x=>{const el=map[x.id];if(!el)return;main.appendChild(el);el.hidden=!x.show});
+}
+function applyMotion(){
+  Object.keys(CFG.motion).forEach(k=>{if(typeof CFG.motion[k]==="boolean")document.body.classList.toggle("no-"+k,CFG.motion[k]===false)});
+  if(PREVIEW)document.body.classList.add("no-loader");
+}
+function maskHeadings(){$$(".head h2,.about h2").forEach(h=>h.innerHTML=`<span class="mk">${esc(h.textContent)}</span>`)}
+const isVideo=u=>/\.(mp4|webm|mov)(\?|$)/i.test(u||"");
+function mediaEl(u,extra=""){return isVideo(u)?`<video src="${esc(u)}" muted loop playsinline preload="metadata" ${RM.matches?"":"autoplay"} ${extra}></video>`:`<img src="${esc(u)}" alt="" loading="lazy" decoding="async">`}
+function applyLayers(){
+  const h=CFG.hero,box=$("#hlayers");
+  $(".hero").style.setProperty("--bgo",(+h.bgOpacity||0)/100);
+  const bg=h.bgVideo?`<video class="hbg" src="${esc(h.bgVideo)}" muted loop playsinline ${RM.matches?"":"autoplay"}></video>`:h.bgImage?`<img class="hbg" src="${esc(h.bgImage)}" alt="">`:"";
+  box.innerHTML=bg+(h.layers||[]).filter(l=>l.src).map(l=>`<div class="hl ${l.z==="back"?"back":"front"} an-${esc(l.anim)}" style="left:${+l.x}%;top:${+l.y}%;width:${+l.w}%;opacity:${(+l.opacity)/100}">${mediaEl(l.src)}</div>`).join("");
+}
+function applyBanner(){
+  const b=CFG.banner,el=$("#banner");
+  el.style.setProperty("--bh",(+b.height||60)+"vh");el.style.setProperty("--bo",(+b.overlay||0)/100);el.style.color=b.textColor;
+  $("#bmedia").innerHTML=b.media?(isVideo(b.media)?`<video src="${esc(b.media)}" ${b.poster?`poster="${esc(b.poster)}"`:""} muted loop playsinline preload="metadata" ${RM.matches?"":"autoplay"}></video>`:`<img src="${esc(b.media)}" alt="" loading="lazy">`):"";
+  $("#btxt").innerHTML=(b.title?`<h2>${esc(b.title)}</h2>`:"")+(b.text?`<p>${esc(b.text)}</p>`:"")+(b.btnText?`<a class="btn" href="${esc(safeUrl(b.btnLink))}"><span>${esc(b.btnText)}</span></a>`:"");
+}
+function applyFooter(){
+  const c=CFG.contact,li=[["instagram",c.instagram],["facebook",c.facebook],["tiktok",c.tiktok],["youtube",c.youtube]].filter(x=>x[1]).map(x=>`<li><a href="${esc(safeUrl(x[1]))}" target="_blank" rel="noopener">${esc(T(x[0]))}</a></li>`);
+  if(c.whatsapp)li.push(`<li><a href="https://wa.me/${esc(String(c.whatsapp).replace(/\D/g,""))}" target="_blank" rel="noopener">${esc(T("whatsapp"))}</a></li>`);
+  $("#follow").innerHTML=li.join("");
+  $("#fcontact").innerHTML=[c.email&&`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`,c.phone&&`<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>`,c.address&&esc(c.address)].filter(Boolean).map(x=>`<li>${x}</li>`).join("");
+}
+const PREVIEW=/[?&]preview/.test(location.search);
+function applyAll(){
+  buildSettings();applyTheme();applyTexts();applySettings();applyLayers();applyBanner();applyFooter();drawSale();drawCats();drawGrid();drawCart();
+  applySections();applyMotion();maskHeadings();observe();
+}
 addEventListener("message",e=>{
-  const f=$("#pv"),d=e.data;if(!f||!d||e.source!==f.contentWindow)return;
-  if(d.raasSelect){S.sel=d.raasSelect;S.etab="text";edDraw();pvHi()}
-  if(d.raasStyleInfo){const i=d.raasStyleInfo;S.info=S.info||{};S.info[i.id]=i;
-    if(S.etab==="text"&&S.sel===i.id){const ed=$("#ed"),P="ext.styles."+i.id+".",q=s=>ed.querySelector(`[data-ek="${P}${s}"]`);
-      const sz=q("size");if(sz&&!sz.value)sz.placeholder=Math.round(i.size);
-      const lh=q("lh");if(lh&&!lh.value)lh.placeholder=i.lh==="normal"?"normal":(parseFloat(i.lh)/i.size).toFixed(2);
-      const co=ed.querySelector(`input[type=color][data-ek="${P}color"]`);if(co&&!getP(S.draft,P+"color")&&toHex(i.color))co.value=toHex(i.color)}}
+  if(e.source!==window.parent||!e.data)return;
+  if(e.data.raasPreview){CFG=window.RAAS_merge(D,e.data.raasPreview);applyAll()}
+  if("raasScroll" in e.data){const el=e.data.raasScroll?document.querySelector(e.data.raasScroll):null;
+    if(el&&el.offsetParent)el.scrollIntoView({behavior:"smooth",block:"start"});else scrollTo({top:0,behavior:"smooth"})}
 });
-/* ---- save draft / publish / reset ---- */
-function checkDraft(){const h=S.draft.hero;if(h.video&&!/^https?:\/\//i.test(h.video))throw new Error("The hero video link is not valid.");
-  const sp=+S.draft.ext.wallet.speed;if(!(sp>=.1&&sp<=4))throw new Error("Playback speed must be between 0.1 and 4.");}
-ACT.edsave=async a=>{clearTimeout(ct);commit();a.disabled=true;try{checkDraft();const r=await sb.from("site_config").upsert({id:"draft",data:S.draft,updated_at:new Date().toISOString()});if(r.error)throw r.error;S.hasDraft=true;toast("Draft saved. It is NOT live yet.")}finally{a.disabled=false}};
-async function cleanTrash(){
-  const now=JSON.stringify(S.draft),paths=[];
-  S.trash.forEach(u=>{if(now.includes(u))return;const m=String(u).split("/storage/v1/object/public/media/")[1];if(m&&/^(hero-wallet|branding)\//.test(m))paths.push(decodeURIComponent(m.split("?")[0]))});
-  if(paths.length){try{await sb.storage.from("media").remove(paths)}catch(e){console.warn("cleanup",e)}}
-}
-ACT.edpub=async a=>{clearTimeout(ct);commit();a.disabled=true;
-  try{checkDraft();const r=await sb.from("site_config").upsert({id:"main",data:S.draft,updated_at:new Date().toISOString()});if(r.error)throw r.error;
-    await sb.from("site_config").delete().eq("id","draft");await cleanTrash();
-    S.live=cl(S.draft);S.hasDraft=false;S.trash=new Set();histReset();histBtns();edDraw();edStat();toast("Published. The live website is updated for every visitor.")}
-  finally{a.disabled=false}};
-ACT.edresetall=()=>{if(!confirm("Reset EVERYTHING in the editor (texts, fonts, colours, branding, hero video) to the original RAAS defaults?\n\nNothing changes on the live site until you press Publish. You can still Undo."))return;
-  [S.draft.hero.video,S.draft.hero.videoMobile,S.draft.hero.image,S.draft.brand.logoUrl,S.draft.brand.footerLogoUrl,S.draft.ext.brand.favicon].forEach(trashOld);
-  S.draft=normDraft(RAAS_merge(RAAS_DEFAULTS,{}));edDraw();touch();commit()};
 
-/* ---- product discounts: live calculator ---- */
-function finalPrice(price,type,val){if(price==null||val==null||val==="")return price;return type==="percent"?Math.round(price*(1-val/100)):Math.max(0,Math.round(price-val))}
-function discCell(p){
-  if(p.price==null)return '<span class="mut">not set</span>';if(p.discount_value==null)return money(p.price);
-  const n=Date.now(),s=p.discount_start&&Date.parse(p.discount_start)>n?"scheduled":p.discount_end&&Date.parse(p.discount_end)<=n?"expired":"active";
-  return `<s class="mut">${money(p.price)}</s> <b>${money(finalPrice(p.price,p.discount_type,p.discount_value))}</b><br><span class="tag">${p.discount_type==="percent"?p.discount_value+"% off":"PKR "+p.discount_value+" off"}</span> <span class="tag ${s==="active"?"delivered":s==="scheduled"?"pending":"cancelled"}">${s}</span>`}
-function calcDisc(){
-  const el=$("#pcalc");if(!el)return;const price=$("#pprice").value===""?null:+$("#pprice").value,en=$("#pden").checked,t=$("#pdt").value,v=$("#pdv").value===""?null:+$("#pdv").value;
-  $("#pdbox").style.opacity=en?1:.5;
-  if(!en||price==null||v==null){el.innerHTML=price==null?"Enter the original price to see the final price.":en?"Enter the discount value.":"Discount is off. Customers pay the original price.";return}
-  const f=finalPrice(price,t,v);el.innerHTML=`Original <s>${money(price)}</s> → discount ${t==="percent"?v+"%":money(v)} → <b>Final price ${money(f)}</b> <span class="mut">(customers save ${money(price-f)})</span>`}
-$("#mbox").addEventListener("input",e=>{if(["pprice","pden","pdt","pdv","pds","pde"].includes(e.target.id))calcDisc()});
-ACT.rmdisc=()=>{$("#pden").checked=false;$("#pdv").value="";$("#pds").value="";$("#pde").value="";calcDisc();toast("Discount cleared. Press Save product to apply.")};
-ACT.rmdiscrow=async a=>{if(!confirm("Remove the discount from this product?"))return;const r=await sb.from("products").update({discount_type:null,discount_value:null,discount_start:null,discount_end:null}).eq("id",a.dataset.id);if(r.error)throw r.error;toast("Discount removed");V.products()};
-
-addEventListener("hashchange",()=>{if(ME&&location.hash.slice(1)!==S.cur)go(location.hash.slice(1))});
-start();
+/* init */
+const t0=Date.now();
+(async()=>{
+  await loadData();applyAll();
+  setTimeout(reveal,PREVIEW||RM.matches||CFG.motion.loader===false?0:Math.max(0,(+CFG.motion.loaderMs||0)-(Date.now()-t0)));
+})();
 </script>
+<script src="shared/raas-extras.js"></script>
 </body>
 </html>

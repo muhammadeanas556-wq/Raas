@@ -36,6 +36,7 @@ const D={
     footShop:"SHOP",footFollow:"FOLLOW",footPolicies:"POLICIES",privacy:"Privacy Policy",returns:"Return and Exchange Policy",copyright:"© RAAS. All rights reserved.",
     instagram:"Instagram",whatsapp:"WhatsApp",facebook:"Facebook",tiktok:"TikTok",youtube:"YouTube",days:"Days",hours:"Hours",min:"Min",sec:"Sec",priceTbd:"Price to be set",pctOff:"{n}% OFF",saveAmt:"SAVE PKR {n}",saleLine:"flat {n}% off",video:"VIDEO",cartColour:"Colour",cartQty:"Qty",
     sizeSelect:"SELECT SIZE",sizeRequired:"Please select your size.",sizeChoose:"Select size",cartSize:"Size",
+    colourRequired:"Please select your colour.",
     noBackend:"Ordering is not available yet.",orderDone:"Order {n} received. We will call you to confirm it."}
 };
 function merge(a,b){

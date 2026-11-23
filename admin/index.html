@@ -249,8 +249,8 @@ function prodForm(id){
   modal(`<h2>${id?"Edit product":"New product"}</h2>
    ${L("Name",`<input id="pn" value="${esc(p.name)}">`)}
    <div class="r2">${L("Product category",`<select id="pcat"><option value="">— none —</option>${S.cats.map(c=>`<option value="${c.id}" ${p.category_id===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>`)}
-   ${L("Product price (PKR)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
-   <div class="r2">${L("Discounted price (PKR, optional)",`<input id="psale" type="number" min="0" value="${p.sale_price??""}" placeholder="leave empty for no discount">`)}${L("SKU (optional)",`<input id="psku" value="${esc(p.sku||"")}">`)}</div>
+   ${L("Original price (PKR, per piece)",`<input id="pprice" type="number" min="0" value="${p.price??""}">`)}</div>
+   <div class="r2">${L("Discounted / sale price (PKR, per piece, optional)",`<input id="psale" type="number" min="0" value="${p.sale_price??""}" placeholder="leave empty for no discount">`)}${L("SKU (optional)",`<input id="psku" value="${esc(p.sku||"")}">`)}</div>
    <div class="f"><span>Main product image (only one needed)</span><div class="mainimg"><div id="mimg"></div><label class="b o s">Upload image<input type="file" accept="image/*" hidden data-chg="mimgup"></label></div></div>
    ${L("Description",`<textarea id="pdesc" rows="3">${esc(p.description)}</textarea>`)}
    <div id="pdbox"><h3 style="margin-bottom:8px">Scheduled / percentage discount <span class="mut" style="font-weight:400">(optional, the discounted price above wins if both are set)</span></h3>
@@ -268,7 +268,7 @@ function prodForm(id){
    <h3 style="margin:8px 0">Available Sizes <span class="mut" style="font-weight:400">(tick every size this product comes in; only ticked sizes appear on the product page. Leave all unticked if this product has no sizes)</span></h3>
    <div class="szs" id="szs"></div>
    <div class="mrow" style="margin-bottom:14px"><button class="b o s" type="button" data-act="szall">Select all</button><button class="b o s" type="button" data-act="szclear">Clear</button></div>
-   <h3 style="margin:8px 0">Colours and stock <span class="mut" style="font-weight:400">(add as many colours as you need; each has its own swatch and stock. Total stock: <b id="tstock">0</b>)</span></h3>
+   <h3 style="margin:8px 0">Colours and stock <span class="mut" style="font-weight:400">(add as many colours as you need; each has its own swatch and stock. With 2 or more colours the customer must pick one; with only one colour it is chosen automatically. Total stock: <b id="tstock">0</b>)</span></h3>
    <div id="cols"></div><button class="b o s" data-act="addcol">+ Add colour</button>
    <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="saveprod">Save product</button></div>`,true);
   drawCols();drawSpecs();drawMain();drawSizes();calcDisc();
@@ -330,7 +330,7 @@ ACT.saveprod=async a=>{
     const badHex=S.E.cols.findIndex(c=>!normHex(c.hex));
     if(badHex>-1){paintHex(badHex,true);const f=$(`#cols input[data-ci="${badHex}"][data-cf="hex"]`);f&&f.focus();
       throw new Error(`Colour ${badHex+1}${S.E.cols[badHex].name.trim()?" ("+S.E.cols[badHex].name.trim()+")":""}: ${HEX_MSG}`)}
-    if(row.sale_price!=null){if(row.price==null)throw new Error("Enter the product price before a discounted price");if(!(row.sale_price<row.price))throw new Error("The discounted price must be lower than the product price")}
+    if(row.sale_price!=null){if(row.price==null)throw new Error("Enter the original price before a discounted price");if(!(row.sale_price<row.price))throw new Error("The discounted price must be lower than the original price")}
     if(dtp){if(row.price==null)throw new Error("Enter the original price before adding a discount");const dv=row.discount_value;
       if(!(dv>0))throw new Error("Enter a discount value above zero, or switch the discount off");
       if(dtp==="percent"&&dv>99)throw new Error("A percentage discount must be between 1 and 99");
@@ -399,8 +399,10 @@ function drawOrders(){
   $("#olist").innerHTML=`<table><tr><th>Order</th><th>Date</th><th>Customer</th><th>Phone</th><th>City</th><th>Total</th><th>Payment</th><th>Status</th></tr>${ofilter().map(o=>`<tr class="click" data-act="openorder" data-id="${o.id}"><td><b>#${o.number}</b></td><td>${dt(o.created_at)}</td><td>${esc(o.customer_name)}</td><td>${esc(o.phone)}</td><td>${esc(o.city)}</td><td>${money(o.total)}</td><td>${o.payment_method==="cod"?"Cash on Delivery":esc(o.payment_method)}</td><td><span class="tag ${o.status}">${o.status}</span></td></tr>`).join("")||'<tr><td colspan="8" class="mut">No orders found.</td></tr>'}</table>`;
 }
 ACT.exportorders=()=>{
-  const rows=[["Order","Date","Customer","Phone","Email","Address","City","Items","Subtotal","Discount","Delivery","Total","Payment","Status"],
-    ...ofilter().map(o=>[o.number,o.created_at,o.customer_name,o.phone,o.email||"",o.address,o.city,o.items.map(i=>`${i.name} (${i.colour}${i.size?", size "+sizeName(i.size):""}) x${i.qty}`).join("; "),o.subtotal,o.discount,o.delivery,o.total,o.payment_method,o.status])];
+  /* one line per product: size, colour, quantity and every price kept separate */
+  const rows=[["Order","Date","Customer","Phone","Email","Address","City","Product","Size","Colour","Quantity","Original price (per piece)","Discounted price (per piece)","Total before coupon","Coupon code","Coupon discount","Final after coupon","Delivery (order)","Order total","Payment","Status"]];
+  ofilter().forEach(o=>o.items.forEach((i,n)=>{const lt=i.line_total??i.unit*i.qty;
+    rows.push([o.number,o.created_at,o.customer_name,o.phone,o.email||"",o.address,o.city,i.name,i.size||"",i.colour||"",i.qty,i.original??"",i.unit,lt,o.coupon_code||"",i.coupon_discount??(n===0?o.discount:0),i.final??(n===0?lt-o.discount:lt),n===0?o.delivery:"",n===0?o.total:"",o.payment_method,o.status])}));
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="raas-orders.csv";a.click();
 };
@@ -410,8 +412,9 @@ ACT.openorder=async a=>{
    <div class="r2" style="margin-top:12px"><label class="f"><span>Name</span><input id="on" value="${esc(o.customer_name)}"></label><label class="f"><span>Phone</span><input id="op" value="${esc(o.phone)}"></label>
    <label class="f"><span>Email</span><input id="oe" value="${esc(o.email||"")}"></label><label class="f"><span>City</span><input id="oc" value="${esc(o.city)}"></label></div>
    <label class="f"><span>Address</span><textarea id="oa" rows="2">${esc(o.address)}</textarea></label>
-   <table style="min-width:0;margin:8px 0"><tr><th>Product</th><th>Colour</th><th>Size</th><th>Qty</th><th>Price</th></tr>${o.items.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.colour)}</td><td>${i.size?`<b>${esc(sizeName(i.size))}</b>`:'<span class="mut">—</span>'}</td><td>${i.qty}</td><td>${money(i.unit*i.qty)}</td></tr>`).join("")}</table>
-   <p>Subtotal ${money(o.subtotal)}${o.discount>0?` · Discount −${money(o.discount)} (${esc(o.coupon_code||"")})`:""} · Delivery ${money(o.delivery)}</p><p><b>Total ${money(o.total)}</b></p>
+   <div style="overflow-x:auto"><table style="min-width:0;margin:8px 0"><tr><th>Product</th><th>Colour</th><th>Size</th><th>Qty</th><th>Original<br><span class="mut" style="font-weight:400">per piece</span></th><th>Discounted<br><span class="mut" style="font-weight:400">per piece</span></th><th>Total<br><span class="mut" style="font-weight:400">before coupon</span></th><th>Coupon<br><span class="mut" style="font-weight:400">discount</span></th><th>Final<br><span class="mut" style="font-weight:400">after coupon</span></th></tr>${o.items.map(i=>{const lt=i.line_total??i.unit*i.qty,na='<span class="mut">—</span>';
+     return `<tr><td>${esc(i.name)}</td><td>${esc(i.colour)}</td><td>${i.size?`<b>${esc(sizeName(i.size))}</b>`:na}</td><td>${i.qty}</td><td>${i.original!=null?money(i.original):na}</td><td>${money(i.unit)}</td><td>${money(lt)}</td><td>${i.coupon_discount!=null?(+i.coupon_discount?"−"+money(i.coupon_discount):money(0)):na}</td><td>${i.final!=null?`<b>${money(i.final)}</b>`:na}</td></tr>`}).join("")}</table></div>
+   <p>${o.items.some(i=>i.original!=null)?`Original value ${money(o.items.reduce((a,i)=>a+(i.original??i.unit)*i.qty,0))} · `:""}Subtotal ${money(o.subtotal)} · Coupon ${o.coupon_code?`<b>${esc(o.coupon_code)}</b> −${money(o.discount)}`:'<span class="mut">none</span>'} · Delivery ${money(o.delivery)}</p><p><b>Total ${money(o.total)}</b></p>
    <h3 style="margin-top:14px">History</h3>${(h.data||[]).map(x=>`<p class="mut">${dt(x.at)} — ${x.status}${x.note?": "+esc(x.note):""}</p>`).join("")}</div>
    <div class="r2" style="margin-top:14px"><label class="f"><span>Change status</span><select id="ost">${STATUSES.map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></label><label class="f"><span>Note (optional)</span><input id="ono"></label></div>
    <div class="acts"><button class="b o" data-act="printorder">Print</button><button class="b o" data-act="saveorder">Save customer details</button><button class="b" data-act="setstatus">Update status</button><button class="b o" data-act="close">Close</button></div>`,true);
