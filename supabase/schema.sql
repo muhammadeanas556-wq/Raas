@@ -22,7 +22,8 @@ create table if not exists products(
   discount_start timestamptz, discount_end timestamptz,
   featured boolean default false, active boolean default true,
   video_url text, specs jsonb default '[]', sort int default 0, created_at timestamptz default now(),
-  image text, sku text, sale_price numeric check (sale_price is null or sale_price>=0));
+  image text, sku text, sale_price numeric check (sale_price is null or sale_price>=0),
+  sizes text[] not null default '{}' constraint products_sizes_chk check (sizes <@ array['XS','S','M','L','XL','XXL','XXXL']::text[]));
 create table if not exists product_colours(
   id uuid primary key default gen_random_uuid(), product_id uuid not null references products(id) on delete cascade,
   name text not null, hex text default '#141414' constraint product_colours_hex_chk check (hex ~* '^#([0-9a-f]{3}|[0-9a-f]{6})$'), stock int not null default 0 check (stock>=0),
@@ -166,7 +167,7 @@ end $$;
 create or replace function place_order(payload jsonb) returns jsonb language plpgsql security definer set search_path=public as $$
 declare it jsonb; col record; prod products; unit numeric; sub numeric:=0; lines jsonb:='[]'; q int; cfg jsonb;
   sale_pct numeric:=0; chg numeric:=0; free numeric; ship numeric; cp coupons; ev jsonb; disc numeric:=0; ccode text;
-  oid uuid; num bigint; tot numeric;
+  oid uuid; num bigint; tot numeric; sz text;
 begin
   if length(trim(coalesce(payload->>'name','')))<2 or length(trim(coalesce(payload->>'phone','')))<10
      or length(trim(coalesce(payload->>'address','')))<5 or length(trim(coalesce(payload->>'city','')))<2 then
@@ -185,10 +186,16 @@ begin
     select * into prod from products where id=col.product_id and active;
     if not found or prod.price is null then raise exception 'An item is no longer available'; end if;
     if col.stock<q then raise exception '% (%) is out of stock', prod.name, col.name; end if;
+    -- size: required (and must be one the admin enabled) whenever the product has sizes; ignored otherwise
+    sz:=nullif(upper(trim(coalesce(it->>'size',''))),'');
+    if coalesce(array_length(prod.sizes,1),0)>0 then
+      if sz is null then raise exception 'Please select your size for %', prod.name; end if;
+      if not (sz = any(prod.sizes)) then raise exception 'Size % is not available for %', sz, prod.name; end if;
+    else sz:=null; end if;
     unit:=raas_unit_price(prod,sale_pct);
     update product_colours set stock=stock-q where id=col.id;
     sub:=sub+unit*q;
-    lines:=lines||jsonb_build_object('product_id',prod.id,'colour_id',col.id,'name',prod.name,'colour',col.name,'qty',q,'unit',unit,'image',coalesce(prod.image,col.images[1]));
+    lines:=lines||jsonb_build_object('product_id',prod.id,'colour_id',col.id,'name',prod.name,'colour',col.name,'size',sz,'qty',q,'unit',unit,'image',coalesce(prod.image,col.images[1]));
   end loop;
   if coalesce(trim(payload->>'coupon'),'')<>'' then
     select * into cp from coupons where upper(code)=upper(trim(payload->>'coupon')) for update;

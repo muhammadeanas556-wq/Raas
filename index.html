@@ -178,6 +178,19 @@ select{padding:10px 36px 10px 16px;border:1px solid var(--line);font:inherit;fon
 .sw button.na{opacity:.35}
 .sw button.na::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--muted);transform:rotate(45deg)}
 .qrow{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap}
+.szbox{margin-top:30px;scroll-margin-top:90px}.szbox .lbl{margin:0 0 12px}
+.szg{display:flex;flex-wrap:wrap;gap:10px}
+.szg button{min-width:52px;min-height:46px;padding:0 16px;border:1px solid var(--line);background:transparent;color:var(--text);font:inherit;font-size:14px;font-weight:500;letter-spacing:.04em;border-radius:4px;cursor:pointer;transition:background .25s,color .25s,border-color .25s,transform .25s}
+.szg button:hover{border-color:var(--text)}
+.szg button.on{background:var(--acc);color:var(--acc-text);border-color:var(--acc)}
+.szg button:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.szg button:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.szerr{display:none;margin-top:10px;font-size:13px;color:#e5484d;font-weight:500}
+.szbox.need .szerr{display:block}.szbox.need .szg button:not(.on){border-color:#e5484d}
+.szbox.need .szg{animation:szshake .4s}
+@keyframes szshake{20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+.ci .szpick{margin-top:6px;max-width:100%;padding:6px 8px;font-size:13px;border:1px solid #e5484d;background:transparent;color:var(--text);border-radius:4px}
+@media(max-width:600px){.szg{gap:8px}.szg button{flex:1 0 calc(25% - 8px);min-width:0;padding:0 8px}}
 .qty{display:inline-flex;border:1px solid var(--line);align-items:center;border-radius:calc(var(--radius)*.75)}
 .qty button{width:46px;height:50px;font-size:18px;color:var(--muted)}.qty button:hover{color:var(--text)}.qty output{min-width:34px;text-align:center;font-weight:600}
 .acts{display:grid;gap:10px;margin-top:12px}
@@ -513,10 +526,12 @@ function buildSettings(){
     categories:[{id:"all",name:T("collectionTitle")},...CATS.map(x=>({id:x.slug,name:esc(x.name)}))],
     policies:CFG.policies};
 }
+const SIZE_LIST=[["XS","Extra Small"],["S","Small"],["M","Medium"],["L","Large"],["XL","Extra Large"],["XXL","Double Extra Large"],["XXXL","Triple Extra Large"]];
+const sizeName=c=>{const x=SIZE_LIST.find(z=>z[0]===String(c||"").toUpperCase());return x?x[1]+" ("+x[0]+")":esc(c||"")};
 const mapProduct=p=>{
   let cols=(p.product_colours||[]).sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:esc(c.name),hex:/^#[0-9a-f]{3,8}$/i.test(c.hex)?c.hex:"#141414",inStock:c.stock>0,stock:c.stock,images:p.image?[p.image]:(c.images||[]).slice(0,1)}));
   if(!cols.length)cols=[{id:null,name:"Default",hex:"#141414",inStock:false,images:[]}];
-  return {id:p.id,name:esc(p.name),category:p.categories?p.categories.slug:"",description:esc(p.description),price:num(p.price),salePrice:(num(p.sale_price)!=null&&num(p.price)!=null&&+p.sale_price<+p.price)?+p.sale_price:null,sku:esc(p.sku||""),image:p.image||"",featured:p.featured,video:p.video_url,
+  return {id:p.id,name:esc(p.name),category:p.categories?p.categories.slug:"",description:esc(p.description),price:num(p.price),salePrice:(num(p.sale_price)!=null&&num(p.price)!=null&&+p.sale_price<+p.price)?+p.sale_price:null,sku:esc(p.sku||""),sizes:SIZE_LIST.map(z=>z[0]).filter(c=>(p.sizes||[]).includes(c)),image:p.image||"",featured:p.featured,video:p.video_url,
     specs:(p.specs||[]).filter(x=>x&&String(x.k||"").trim()&&String(x.v||"").trim()).map(x=>({k:esc(x.k),v:esc(x.v)})),
     discount:p.discount_value!=null?{type:p.discount_type,value:+p.discount_value,startsAt:p.discount_start,endsAt:p.discount_end}:null,colours:cols};
 };
@@ -631,9 +646,9 @@ $("#menu").onclick=()=>$("#nav").classList.toggle("open");
 $$("#nav a").forEach(a=>a.onclick=()=>$("#nav").classList.remove("open"));
 
 /* ---------- product page: gallery + 360° drag viewer + video ---------- */
-let cur=null,sel=null,idx=0,qty=1,mode="photos",pfirst=false;
+let cur=null,sel=null,idx=0,qty=1,mode="photos",pfirst=false,selSize="",sizeNeed=false;
 function openProduct(id){
-  cur=PRODUCTS.find(p=>p.id===id); sel=cur.colours.find(c=>c.inStock)||cur.colours[0]; idx=0;qty=1;mode="photos";pfirst=true;
+  cur=PRODUCTS.find(p=>p.id===id); sel=cur.colours.find(c=>c.inStock)||cur.colours[0]; idx=0;qty=1;mode="photos";pfirst=true;selSize="";sizeNeed=false;
   renderProduct(); $("#pdp").classList.add("open"); $("#pdp").setAttribute("aria-hidden","false"); document.body.style.overflow="hidden"; $("#pdp").scrollTop=0;
 }
 function closeProduct(){$("#pdp").classList.remove("open");$("#pdp").setAttribute("aria-hidden","true");document.body.style.overflow="";stopAuto()}
@@ -659,6 +674,9 @@ function renderProduct(){
     ${p.colours.length>1||true?`<div class="lbl">${T("colour")}<span id="cname">${sel.name}</span></div>
     <div class="sw">${p.colours.map(c=>`<button data-col="${c.name}" class="${c===sel?'on':''} ${c.inStock?'':'na'}" style="background:${c.hex}" title="${c.name}${c.inStock?'':' — unavailable'}" aria-label="${c.name}"></button>`).join("")}</div>
     <div class="cnames">${p.colours.map(c=>`<span class="${c===sel?'on':''}">${c.name}</span>`).join("")}</div>`:""}
+    ${p.sizes&&p.sizes.length?`<div class="szbox${sizeNeed&&!selSize?" need":""}" id="szbox"><div class="lbl">${T("sizeSelect")}<span id="szname">${selSize?sizeName(selSize):""}</span></div>
+    <div class="szg" role="radiogroup" aria-label="${esc(T("sizeSelect"))}">${p.sizes.map(z=>`<button type="button" role="radio" aria-checked="${z===selSize}" data-size="${z}" class="${z===selSize?"on":""}" title="${esc(sizeName(z))}">${z}</button>`).join("")}</div>
+    <div class="szerr" role="alert">${esc(T("sizeRequired"))}</div></div>`:""}
     <div class="qrow"><div class="qty"><button id="qm">−</button><output id="qv">${qty}</output><button id="qp">+</button></div></div>
     <div class="acts">
       <button class="btn" id="add" ${ok?"":"disabled style='opacity:.4;pointer-events:none'"}><span>${T("addToCart")}</span></button>
@@ -693,17 +711,26 @@ $("#pbody").addEventListener("click",e=>{
   if(col){sel=cur.colours.find(c=>c.name===col.dataset.col);idx=0;mode="photos";stopAuto();renderProduct()}
   if(e.target.id==="qm"){qty=Math.max(1,qty-1);$("#qv").textContent=qty}
   if(e.target.id==="qp"){qty=Math.min(10,qty+1);$("#qv").textContent=qty}
-  if(e.target.closest("#add")){addToCart();openCart()}
-  if(e.target.closest("#buy")){addToCart();closeProduct();openCart(true)}
+  const sz=e.target.closest("[data-size]");
+  if(sz){selSize=sz.dataset.size;sizeNeed=false;
+    $$("#pbody .szg button").forEach(b=>{const on=b.dataset.size===selSize;b.classList.toggle("on",on);b.setAttribute("aria-checked",on)});
+    $("#szname").textContent=sizeName(selSize);$("#szbox").classList.remove("need")}
+  if(e.target.closest("#add")){if(addToCart())openCart()}
+  if(e.target.closest("#buy")){if(addToCart()){closeProduct();openCart(true)}}
 });
 
 /* ---------- cart + checkout (cart is browser-only; orders need the backend) ---------- */
 let cart=[]; try{cart=JSON.parse(localStorage.getItem("raas_cart")||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem("raas_cart",JSON.stringify(cart))}catch(e){}};
 function addToCart(){
-  const k=cur.id+"|"+sel.name,l=cart.find(x=>x.k===k);
-  l?l.qty+=qty:cart.push({k,id:cur.id,cid:sel.id,name:cur.name,colour:sel.name,hex:sel.hex,img:frames(sel)[0],price:eff(cur),qty});
-  save();drawCart();const b=$("#cnt");b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");
+  const needs=cur.sizes&&cur.sizes.length;
+  if(needs&&!selSize){   // clothing with sizes cannot be added without choosing one
+    sizeNeed=true;const b=$("#szbox");
+    if(b){b.classList.remove("need");void b.offsetWidth;b.classList.add("need");b.scrollIntoView({block:"center",behavior:"smooth"})}
+    return false}
+  const size=needs?selSize:"",k=cur.id+"|"+sel.name+(size?"|"+size:""),l=cart.find(x=>x.k===k);
+  l?l.qty=Math.min(10,l.qty+qty):cart.push({k,id:cur.id,cid:sel.id,name:cur.name,colour:sel.name,size,hex:sel.hex,img:frames(sel)[0],price:eff(cur),qty});
+  save();drawCart();const b=$("#cnt");b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");return true;
 }
 function totals(){
   const sub=cart.reduce((s,i)=>s+(i.price||0)*i.qty,0),d=SETTINGS.delivery;
@@ -712,7 +739,10 @@ function totals(){
 }
 /* ---------- discount code: checked and priced on the server (apply_coupon); the browser never decides the discount ---------- */
 let COUPON=null;   // {code, q: server quote {subtotal, discount, delivery, total, type, value, ...}, sig}
-const cartSig=()=>cart.map(i=>i.cid+"x"+i.qty).join(",");
+const cartSig=()=>cart.map(i=>i.cid+"x"+i.qty+"x"+(i.size||"")).join(",");
+/* a cart line that still needs a size (product has sizes but the line has none / one the admin has since removed) */
+const prodOf=i=>PRODUCTS.find(p=>p.id===i.id);
+const sizeBad=i=>{const p=prodOf(i);return !!(p&&p.sizes&&p.sizes.length&&!p.sizes.includes(i.size))};
 const pkr=n=>"PKR "+Number(n||0).toLocaleString("en-PK");
 function couponMsg(m,ok){const el=$("#cpmsg");if(!el)return;el.textContent=m||"";el.className="cpmsg"+(m?(ok?" ok":" err"):"");const i=$("#cpin");if(i)i.classList.toggle("bad",!!m&&!ok)}
 function friendlyErr(e){const m=e&&e.message||"";return /fetch|network|timeout|failed/i.test(m)&&!/discount|code|item|stock|cart/i.test(m)?T("couponNetErr"):m}
@@ -763,7 +793,7 @@ let coMode=false;
 function drawCart(checkout){coMode=!!checkout;
   $("#cnt").textContent=cart.reduce((s,i)=>s+i.qty,0);
   $("#cbody").innerHTML=cart.length?cart.map((i,n)=>`<div class="ci"><div class="t">${frameHTML(i.img,0,i.hex)}</div>
-    <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small><div class="qtyc"><button type="button" data-dec="${n}" aria-label="Less"${i.qty<=1?" disabled":""}>&minus;</button><output>${i.qty}</output><button type="button" data-inc="${n}" aria-label="More"${i.qty>=10?" disabled":""}>+</button></div><button class="rm" data-rm="${n}">${T("remove")}</button></div>
+    <div><b style="font-weight:500">${i.name}</b><small>${T("cartColour")}: ${i.colour}</small>${i.size&&!sizeBad(i)?`<small>${T("cartSize")}: <b style="font-weight:600">${sizeName(i.size)}</b></small>`:sizeBad(i)?`<select class="szpick" data-szfix="${n}" aria-label="${esc(T("sizeSelect"))}"><option value="">${esc(T("sizeChoose"))}</option>${prodOf(i).sizes.map(z=>`<option value="${z}">${sizeName(z)}</option>`).join("")}</select>`:""}<div class="qtyc"><button type="button" data-dec="${n}" aria-label="Less"${i.qty<=1?" disabled":""}>&minus;</button><output>${i.qty}</output><button type="button" data-inc="${n}" aria-label="More"${i.qty>=10?" disabled":""}>+</button></div><button class="rm" data-rm="${n}">${T("remove")}</button></div>
     <div>${money(i.price)}</div></div>`).join(""):'<p class="empty">${T("emptyCart")}</p>';
   if(!cart.length)COUPON=null;
   $("#cfoot").innerHTML=cart.length?`${checkout?'<div class="cpn" id="cpn"></div>':""}<div id="ctot"></div>
@@ -775,6 +805,10 @@ function drawCart(checkout){coMode=!!checkout;
 $("#cfoot").addEventListener("click",e=>{if(e.target.closest("#cpapply"))applyCoupon($("#cpin").value);if(e.target.closest("#cprm"))removeCoupon()});
 $("#cfoot").addEventListener("keydown",e=>{if(e.target.id==="cpin"&&e.key==="Enter"){e.preventDefault();applyCoupon(e.target.value)}});
 $("#cfoot").addEventListener("input",e=>{if(e.target.id==="cpin"&&$("#cpmsg").classList.contains("err"))couponMsg("")});
+$("#cbody").addEventListener("change",e=>{const f=e.target.closest("[data-szfix]");if(!f||!f.value)return;
+  const i=cart[+f.dataset.szfix];if(!i)return;i.size=f.value;i.k=i.id+"|"+i.colour+"|"+i.size;
+  const dup=cart.find(x=>x!==i&&x.k===i.k);if(dup){dup.qty=Math.min(10,dup.qty+i.qty);cart.splice(cart.indexOf(i),1)}
+  save();drawCart(coMode&&cart.length>0)});
 $("#cbody").addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
   const r=b.dataset.rm,inc=b.dataset.inc,dec=b.dataset.dec;
@@ -800,17 +834,18 @@ $("#cfoot").addEventListener("submit",async e=>{e.preventDefault();
   const note=$("#conote"),f=new FormData(e.target),btn=e.target.querySelector("button");
   if(!sb){note.textContent=T("noBackend");return}
   if(cart.some(i=>!i.cid)){note.textContent="Some items cannot be ordered right now.";return}
+  const nosz=cart.find(sizeBad);if(nosz){note.textContent=T("sizeRequired")+" ("+nosz.name+")";return}
   /* a code typed but not applied yet: check it first so the customer sees the new total before ordering */
   const typed=$("#cpin")?$("#cpin").value.trim():"";
   if(!COUPON&&typed){note.textContent="";if(await applyCoupon(typed))note.textContent=T("couponCheckTotal");return}
   if(COUPON&&COUPON.sig!==cartSig()&&!(await applyCoupon(COUPON.code,true)))return;
   btn.disabled=true;
-  const {data,error}=await sb.rpc("place_order",{payload:{name:f.get("name"),phone:f.get("phone"),address:f.get("addr"),city:f.get("city"),coupon:COUPON?COUPON.code:"",items:cart.map(i=>({colour_id:i.cid,qty:i.qty}))}});
+  const {data,error}=await sb.rpc("place_order",{payload:{name:f.get("name"),phone:f.get("phone"),address:f.get("addr"),city:f.get("city"),coupon:COUPON?COUPON.code:"",items:cart.map(i=>({colour_id:i.cid,qty:i.qty,size:i.size||""}))}});
   btn.disabled=false;
   if(error){note.textContent=friendlyErr(error);
     if(COUPON&&/discount code/i.test(error.message||"")){const c=COUPON.code;COUPON=null;drawCoupon();drawTotals();couponMsg(T("couponRemoved").replace("{c}",c)+" "+error.message);note.textContent=T("couponCheckTotal")}
     return}
-  sendToSheet({name:f.get("name"),phone:f.get("phone"),address:f.get("addr")+", "+f.get("city"),items:cart.map(i=>({product:i.name,colour:i.colour,price:i.price,quantity:i.qty}))});
+  sendToSheet({name:f.get("name"),phone:f.get("phone"),address:f.get("addr")+", "+f.get("city"),items:cart.map(i=>({product:i.name,colour:i.colour,size:i.size||"",price:i.price,quantity:i.qty}))});
   cart=[];COUPON=null;save();drawCart();
   $("#cbody").innerHTML=`<p class="empty">${esc(T("orderDone")).replace("{n}","#"+data.number)}</p>`;
   $("#cfoot").innerHTML=(+data.discount>0?`<div class="row"><span>${T("subtotal")}</span><span>${pkr(data.subtotal)}</span></div><div class="row disc"><span>${T("discountLbl")} (${esc(data.coupon||"")})</span><span>−${pkr(data.discount)}</span></div>`:"")+

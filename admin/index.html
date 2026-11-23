@@ -60,6 +60,10 @@ tr.click{cursor:pointer}tr.click:hover{background:#fafafa}
 .swatch.empty{background:repeating-conic-gradient(#e9e9e9 0 25%,#fff 0 50%) 0 0/12px 12px!important}
 input.bad{border-color:#b00020!important;background:#fff8f8}
 .hexerr{color:#b00020;font-size:12px;margin:-4px 0 4px}
+.szs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:8px 0}
+.szs label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:10px 12px;background:#fff;cursor:pointer;font-size:13px;min-height:44px}
+.szs label b{font-size:14px;min-width:34px}.szs label span{color:var(--mut);font-size:12px}
+.szs input{width:auto;flex:none}.szs label.on{border-color:#000;background:#f4f4f4;box-shadow:inset 0 0 0 1px #000}
 .imgs{display:flex;gap:8px;flex-wrap:wrap}
 .im{position:relative;width:74px;height:74px}.im img{width:100%;height:100%;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
 .im button{position:absolute;top:2px;background:#fff;border:1px solid #ccc;border-radius:3px;font-size:10px;padding:0 4px;cursor:pointer}
@@ -238,7 +242,7 @@ ACT.dupprod=async a=>{
   toast("Duplicated as an inactive draft with zero stock");V.products()};
 function prodForm(id){
   const p=id?S.prods.find(x=>x.id===id):{name:"",description:"",price:null,sale_price:null,sku:"",image:"",active:true,featured:false,specs:[],product_colours:[],category_id:((S.cats.find(c=>c.slug==="clothing")||{}).id)||""};
-  S.E={id,del:[],image:p.image||(p.product_colours&&[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>(c.images||[])[0]).find(Boolean))||"",specs:(p.specs&&p.specs.length?p.specs:(id?[]:SPEC_PRESETS.map(k=>({k,v:""})))).map(x=>({k:x.k,v:x.v})),cols:[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:c.name,hex:c.hex,stock:c.stock,images:[...(c.images||[])]}))};
+  S.E={id,del:[],image:p.image||(p.product_colours&&[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>(c.images||[])[0]).find(Boolean))||"",sizes:SIZES.map(z=>z[0]).filter(c=>(p.sizes||[]).includes(c)),specs:(p.specs&&p.specs.length?p.specs:(id?[]:SPEC_PRESETS.map(k=>({k,v:""})))).map(x=>({k:x.k,v:x.v})),cols:[...p.product_colours].sort((a,b)=>a.sort-b.sort).map(c=>({id:c.id,name:c.name,hex:c.hex,stock:c.stock,images:[...(c.images||[])]}))};
   if(!S.E.cols.length)S.E.cols.push({name:"",hex:"",stock:0,images:[]});
   S.E.cols.forEach(c=>c.images=[]);   // colours no longer carry photos: one main image per product
   const L=(t,h)=>`<label class="f"><span>${t}</span>${h}</label>`;
@@ -261,10 +265,13 @@ function prodForm(id){
    ${L("Product video (URL or upload)",`<div class="cp"><input id="pvid" value="${esc(p.video_url||"")}" placeholder="https://..."><label class="b o s" style="display:grid;place-items:center;white-space:nowrap">Upload<input type="file" accept="video/*" hidden data-chg="pvup"></label></div>`)}
    <label class="f"><span>Product status</span><select id="pact"><option value="1" ${p.active?"selected":""}>Active (visible on the website)</option><option value="0" ${!p.active?"selected":""}>Inactive (hidden)</option></select></label>
    <div class="tg"><label><input type="checkbox" id="pfeat" ${p.featured?"checked":""}> Featured</label></div>
+   <h3 style="margin:8px 0">Available Sizes <span class="mut" style="font-weight:400">(tick every size this product comes in; only ticked sizes appear on the product page. Leave all unticked if this product has no sizes)</span></h3>
+   <div class="szs" id="szs"></div>
+   <div class="mrow" style="margin-bottom:14px"><button class="b o s" type="button" data-act="szall">Select all</button><button class="b o s" type="button" data-act="szclear">Clear</button></div>
    <h3 style="margin:8px 0">Colours and stock <span class="mut" style="font-weight:400">(add as many colours as you need; each has its own swatch and stock. Total stock: <b id="tstock">0</b>)</span></h3>
    <div id="cols"></div><button class="b o s" data-act="addcol">+ Add colour</button>
    <div class="acts"><button class="b o" data-act="close">Cancel</button><button class="b" data-act="saveprod">Save product</button></div>`,true);
-  drawCols();drawSpecs();drawMain();calcDisc();
+  drawCols();drawSpecs();drawMain();drawSizes();calcDisc();
 }
 CHG.pvup=async t=>{if(!t.files[0])return;toast("Uploading video…");$("#pvid").value=await up(t.files[0],"video");toast("Video uploaded")};
 /* HEX colour codes: "#000080", "000080", "#fff" are accepted and saved as "#000080" / "#FFFFFF" */
@@ -287,7 +294,17 @@ function drawCols(){
 function drawSpecs(){
   $("#specs").innerHTML=S.E.specs.map((x,i)=>`<div class="specrow"><input data-si="${i}" data-sf="k" placeholder="Field (e.g. Fabric)" value="${esc(x.k)}"><input data-si="${i}" data-sf="v" placeholder="Value" value="${esc(x.v)}"><button class="b d s" type="button" data-act="delspec" data-i="${i}">✕</button></div>`).join("")||'<p class="mut">No fields yet.</p>';
 }
+function drawSizes(){
+  const el=$("#szs");if(!el)return;
+  el.innerHTML=SIZES.map(([c,n])=>{const on=S.E.sizes.includes(c);return `<label class="${on?"on":""}"><input type="checkbox" data-chg="sizetog" value="${c}" ${on?"checked":""}><b>${c}</b><span>${n}</span></label>`}).join("");
+}
+CHG.sizetog=t=>{const set=new Set(S.E.sizes);t.checked?set.add(t.value):set.delete(t.value);S.E.sizes=SIZES.map(z=>z[0]).filter(c=>set.has(c));drawSizes()};
+ACT.szall=()=>{S.E.sizes=SIZES.map(z=>z[0]);drawSizes()};
+ACT.szclear=()=>{S.E.sizes=[];drawSizes()};
 function drawMain(){$("#mimg").innerHTML=S.E.image?`<div class="im"><img src="${esc(S.E.image)}"><button class="x" type="button" data-act="rmmain">✕</button></div>`:'<div class="mut">No image yet</div>'}
+/* sizes the admin can enable per product (code stored in the database -> full name shown everywhere) */
+const SIZES=[["XS","Extra Small"],["S","Small"],["M","Medium"],["L","Large"],["XL","Extra Large"],["XXL","Double Extra Large"],["XXXL","Triple Extra Large"]];
+const sizeName=c=>{const x=SIZES.find(z=>z[0]===String(c||"").toUpperCase());return x?`${x[1]} (${x[0]})`:(c?String(c):"")};
 const SPEC_PRESETS=["Fabric","Material","Fit Type","Style","Sleeve Type","Neck Type","Pattern","Occasion","Season","Care Instructions","Additional Information"];
 ACT.addspec=()=>{S.E.specs.push({k:"",v:""});drawSpecs();const i=$$("#specs .specrow input");i[i.length-2]&&i[i.length-2].focus()};
 ACT.delspec=a=>{S.E.specs.splice(+a.dataset.i,1);drawSpecs()};
@@ -307,7 +324,8 @@ ACT.saveprod=async a=>{
     const row={name:v("pn").trim(),category_id:v("pcat")||null,description:v("pdesc"),price:v("pprice")===""?null:+v("pprice"),sale_price:v("psale")===""?null:+v("psale"),sku:v("psku").trim()||null,image:S.E.image||null,
       discount_type:dtp||null,discount_value:dtp&&v("pdv")!==""?+v("pdv"):null,discount_start:dtp&&v("pds")?new Date(v("pds")).toISOString():null,discount_end:dtp&&v("pde")?new Date(v("pde")).toISOString():null,
       featured:$("#pfeat").checked,active:v("pact")==="1",video_url:v("pvid").trim()||null,
-      specs:S.E.specs.map(x=>({k:x.k.trim(),v:x.v.trim()})).filter(x=>x.k&&x.v)};
+      specs:S.E.specs.map(x=>({k:x.k.trim(),v:x.v.trim()})).filter(x=>x.k&&x.v),
+      sizes:SIZES.map(z=>z[0]).filter(c=>S.E.sizes.includes(c))};
     if(!row.name)throw new Error("Product name is required");
     const badHex=S.E.cols.findIndex(c=>!normHex(c.hex));
     if(badHex>-1){paintHex(badHex,true);const f=$(`#cols input[data-ci="${badHex}"][data-cf="hex"]`);f&&f.focus();
@@ -382,7 +400,7 @@ function drawOrders(){
 }
 ACT.exportorders=()=>{
   const rows=[["Order","Date","Customer","Phone","Email","Address","City","Items","Subtotal","Discount","Delivery","Total","Payment","Status"],
-    ...ofilter().map(o=>[o.number,o.created_at,o.customer_name,o.phone,o.email||"",o.address,o.city,o.items.map(i=>`${i.name} (${i.colour}) x${i.qty}`).join("; "),o.subtotal,o.discount,o.delivery,o.total,o.payment_method,o.status])];
+    ...ofilter().map(o=>[o.number,o.created_at,o.customer_name,o.phone,o.email||"",o.address,o.city,o.items.map(i=>`${i.name} (${i.colour}${i.size?", size "+sizeName(i.size):""}) x${i.qty}`).join("; "),o.subtotal,o.discount,o.delivery,o.total,o.payment_method,o.status])];
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n");
   const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));a.download="raas-orders.csv";a.click();
 };
@@ -392,7 +410,7 @@ ACT.openorder=async a=>{
    <div class="r2" style="margin-top:12px"><label class="f"><span>Name</span><input id="on" value="${esc(o.customer_name)}"></label><label class="f"><span>Phone</span><input id="op" value="${esc(o.phone)}"></label>
    <label class="f"><span>Email</span><input id="oe" value="${esc(o.email||"")}"></label><label class="f"><span>City</span><input id="oc" value="${esc(o.city)}"></label></div>
    <label class="f"><span>Address</span><textarea id="oa" rows="2">${esc(o.address)}</textarea></label>
-   <table style="min-width:0;margin:8px 0"><tr><th>Item</th><th>Colour</th><th>Qty</th><th>Price</th></tr>${o.items.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.colour)}</td><td>${i.qty}</td><td>${money(i.unit*i.qty)}</td></tr>`).join("")}</table>
+   <table style="min-width:0;margin:8px 0"><tr><th>Product</th><th>Colour</th><th>Size</th><th>Qty</th><th>Price</th></tr>${o.items.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.colour)}</td><td>${i.size?`<b>${esc(sizeName(i.size))}</b>`:'<span class="mut">—</span>'}</td><td>${i.qty}</td><td>${money(i.unit*i.qty)}</td></tr>`).join("")}</table>
    <p>Subtotal ${money(o.subtotal)}${o.discount>0?` · Discount −${money(o.discount)} (${esc(o.coupon_code||"")})`:""} · Delivery ${money(o.delivery)}</p><p><b>Total ${money(o.total)}</b></p>
    <h3 style="margin-top:14px">History</h3>${(h.data||[]).map(x=>`<p class="mut">${dt(x.at)} — ${x.status}${x.note?": "+esc(x.note):""}</p>`).join("")}</div>
    <div class="r2" style="margin-top:14px"><label class="f"><span>Change status</span><select id="ost">${STATUSES.map(s=>`<option ${s===o.status?"selected":""}>${s}</option>`).join("")}</select></label><label class="f"><span>Note (optional)</span><input id="ono"></label></div>

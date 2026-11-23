@@ -1,0 +1,34 @@
+RAAS UPDATE: PRODUCT SIZE MANAGEMENT (XS, S, M, L, XL, XXL, XXXL)
+
+1. Supabase > SQL Editor > New query: paste and run  supabase/migration-sizes.sql  (once; safe to repeat).
+   RUN THIS BEFORE uploading the new files.
+   - adds products.sizes (the sizes enabled for each product)
+   - updates place_order so every order line stores its size, and the server refuses an order
+     for a product that has sizes unless a valid size of THAT product is chosen
+   Nothing is deleted: products, colours, stock, orders, coupons and settings are kept.
+   Note: if you ever run migration-clothing.sql or migration-coupons-hex.sql again, run migration-sizes.sql again afterwards.
+
+2. Replace these files in your repo (same folders):
+     index.html                       storefront: Select Size, cart, checkout
+     admin/index.html                 admin: Available Sizes in Add/Edit product, Size in order details + CSV export
+     shared/config.js                 new editable texts (Admin > Website > All website texts)
+     supabase/schema.sql              fresh installs only (already includes everything above)
+     supabase/migration-sizes.sql     NEW
+   Do NOT touch: shared/supabase-config.js, shared/raas-extras.js.
+
+3. Hard refresh (Ctrl+F5) the website and the admin.
+
+ADMIN
+ - Products > Add / Edit product > "Available Sizes": tick every size the product comes in
+   (Select all / Clear buttons). Different products can have different sizes. Saved per product.
+ - A product with NO size ticked has no size choice and is ordered exactly as before (use this for accessories).
+   Existing products start with no sizes: open each clothing product once and tick its sizes.
+ - Orders > open an order: Product / Colour / Size / Qty / Price. Old orders show "—" in Size.
+
+CUSTOMER
+ - Product page: "SELECT SIZE" with only the sizes you ticked. The chosen size is highlighted.
+ - Add to cart / Buy now without a size is blocked and shows "Please select your size."
+ - The same product in two sizes becomes two cart lines. Size is shown in the cart, at checkout and in the order.
+ - A cart saved before this update with a size-less clothing item shows a "Select size" dropdown instead of failing.
+
+NOTE: stock is still counted per colour (not per size).
