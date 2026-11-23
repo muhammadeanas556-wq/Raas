@@ -1,0 +1,55 @@
+RAAS UPDATE: COLOUR / SIZE / QUANTITY CHECKS + FULL PRICES IN ORDERS AND GOOGLE SHEETS
+
+Do the steps in this order. Each step is safe on its own: the new website still works with the old
+Apps Script and the old database, and the new Apps Script still accepts orders from the old website.
+
+1. DATABASE (Supabase > SQL Editor > New query): paste and run  supabase/migration-order-prices.sql
+   (once; safe to repeat; run it after migration-sizes.sql). Nothing is deleted.
+   - every new order line stores: original price per piece, discounted price per piece, total before coupon,
+     the coupon discount for that line, and the final price after the coupon (all worked out by the server)
+   - quantity must be a whole number from 1 to 10 (0 or negative is refused)
+
+2. GOOGLE SHEETS (open your RAAS sheet > Extensions > Apps Script)
+   a. Open Code.gs, select everything, and paste the contents of  google-sheets/Code.gs  over it. Save.
+      (If your old Code.gs did anything extra, e.g. sent you an email, copy that part across first.)
+      SECRET at the top must stay "raas25.netlify.app" (same as SHEET_SECRET in index.html).
+   b. In the function list at the top choose  setupOrderColumns  > Run. Allow the permissions it asks for.
+      This adds the new columns to your existing Orders tab (L to T), renames two headings, makes Profit take
+      the coupon off, and updates the Dashboard and Guide tabs. Existing rows are kept.
+      (It also runs by itself on the first order if you skip this.)
+   c. Deploy > Manage deployments > pencil (Edit) > Version: "New version" > Deploy.
+      Edit the EXISTING deployment. Do not create a new one: the URL must stay the same.
+   d. Optional test: run  testOrderWithoutCoupon  and  testOrderWithCoupon , check the two TEST rows, delete them.
+
+   Orders tab after the update (one row per product in the order):
+     A Order Date  B Tracking ID (you type)  C Client Name  D Address  E Phone Number  F Product Name
+     G Product Wholesale Price (copied from the Products tab)  H Discounted Product Price (per unit)
+     I Quantity  J Total Before Coupon (formula)  K Profit (formula, coupon taken off)
+     L Order ID  M Product Size  N Selected Product Color  O Original Product Price (per unit)
+     P Coupon Code (empty = no coupon)  Q Coupon Discount Amount (0 = no coupon)  R Final Price After Coupon
+     S Delivery Charge  T Final Order Amount   (S and T are for the whole order: first row of the order only)
+   Columns are found by their heading, so you may move them; don't rename the headings.
+
+3. WEBSITE: replace these files in your repo (same folders):
+     index.html                          storefront
+     admin/index.html                    admin
+     shared/config.js                    new text "Please select your colour."
+     supabase/schema.sql                 fresh installs only (already includes step 1)
+     supabase/migration-order-prices.sql NEW
+     google-sheets/Code.gs               NEW (copy of the Apps Script, for your records)
+   Do NOT touch: shared/supabase-config.js, shared/raas-extras.js.
+   Then hard refresh (Ctrl+F5) the website and the admin.
+
+WHAT CHANGED
+ Customer
+ - Product with 2+ colours: no colour is pre-selected; Add to cart / Buy now shows "Please select your colour."
+   until one is tapped. A product with one colour has it selected automatically.
+ - Size works as before (only the sizes you ticked; required when the product has sizes).
+ - Quantity [-] 1 [+]: 1 to 10, minus is disabled at 1. "Total: PKR ..." under it updates with the quantity.
+ - Cart lines show the line total and "2 × PKR 4,000". Prices in the cart are refreshed from the current product prices.
+ - Size, colour and quantity stay saved in the cart through checkout (as before).
+ Admin
+ - Add / Edit product: "Original price" and "Discounted / sale price" (per piece), Available Sizes, Colours and stock.
+ - Orders > open an order: Original, Discounted, Total before coupon, Coupon discount, Final, per product.
+   Orders placed before this update show "—" for prices they did not store.
+ - Export CSV: one line per product with size, colour, quantity and every price in its own column.
