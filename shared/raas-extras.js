@@ -309,9 +309,9 @@ function applyExt(){
   st.textContent=genCSS(x);
   loadFamilies(fontsUsed(x));
   const n=(CFG.brand&&CFG.brand.name)||"RAAS",b=x.brand;
-  document.title=n+" \u2014 "+(b.tagline||"Modern Clothing");
+  if(b.tagline)document.title=n+" \u2014 "+b.tagline;   // SEO: otherwise keep the <title> written in index.html
   setHead('link[rel~="icon"]',()=>{const l=document.createElement("link");l.rel="icon";return l},"href",b.favicon);
-  const desc=b.description||(CFG.footer&&CFG.footer.about)||"";
+  const desc=b.description||"";   // SEO: only override the meta description when set in Admin > Branding
   let md=document.head.querySelector('meta[name="description"]');if(md&&desc)md.setAttribute("content",desc);
   const fl=document.getElementById("flogo");
   let tg=document.getElementById("raas-tagline");
@@ -358,6 +358,102 @@ if(PREVIEW){
 }else window.mark=function(){};
 
 /* if the page already finished its first draw before this file loaded, apply once now */
-if(document.body.classList.contains("ready")||document.getElementById("hTitle").children.length){try{applyExt();buildMedia()}catch(e){}}
+if(document.body.classList.contains("ready")||document.querySelector("#hTitle .w")){try{applyExt();buildMedia()}catch(e){}}
 document.querySelectorAll("#media .wv").forEach(initWallet);
+
+/* ---------- SEO (storefront only): dynamic image alt text, product structured data, ?q= search link ---------- */
+(function seo(){
+  if(!document.getElementById("grid")||!document.getElementById("hTitle"))return;   // not the storefront
+  const SITE="https://raas25.netlify.app/",BRAND="RAAS Clothing";
+  const txt=s=>{const t=document.createElement("textarea");t.innerHTML=String(s==null?"":s);return t.value.replace(/\s+/g," ").trim()};
+  const one=(el,sel)=>{const x=el.querySelector(sel);return x?txt(x.textContent):""};
+
+  /* 1. descriptive alt text for images that are created from database products */
+  function fixAlts(){
+    document.querySelectorAll("#grid .pc").forEach(pc=>{
+      const name=one(pc,"h3"),cat=one(pc,".cat");
+      if(!name)return;
+      const base=name+(cat?" – "+cat:"")+" | "+BRAND;
+      pc.querySelectorAll("img").forEach((im,i)=>{if(!im.getAttribute("alt")||im.dataset.seoAlt){im.alt=base+(i?" (alternate view)":"");im.dataset.seoAlt="1"}});
+      pc.querySelectorAll("svg.garment").forEach(sv=>{if(!sv.hasAttribute("role")){sv.setAttribute("role","img");sv.setAttribute("aria-label",base)}});
+    });
+    const info=document.querySelector("#pbody .info");
+    if(info){
+      const name=one(info,"h1"),cat=info.firstElementChild?txt(info.firstElementChild.textContent):"";
+      if(name){
+        const base=name+(cat&&cat!==name?" – "+cat:"")+" | "+BRAND;
+        document.querySelectorAll("#pbody img").forEach((im,i)=>{if(!im.getAttribute("alt")||im.dataset.seoAlt){im.alt=base+" – photo "+(i+1);im.dataset.seoAlt="1"}});
+      }
+    }
+    document.querySelectorAll("#media img").forEach(im=>{
+      const a=im.getAttribute("alt")||"";
+      if(!a||im.dataset.seoAlt||/^RAAS\b/.test(a)&&!/Clothing/.test(a)){
+        const label=a.replace(/^RAAS\s*/,"").trim();
+        im.alt=BRAND+" – "+(label?label+" view":"men's suits, formal wear and everyday essentials");im.dataset.seoAlt="1";
+      }
+    });
+  }
+
+  /* 2. Product / ItemList structured data built from the products loaded from the database;
+        also adds social links, phone and email (from Admin > Contact) to the brand schema */
+  let lastLD="";
+  function buildLD(){
+    try{
+      const P=(typeof PRODUCTS!=="undefined"&&PRODUCTS)||[];
+      if(P.length){
+        const catName=id=>{const c=(typeof SETTINGS!=="undefined"&&SETTINGS.categories||[]).find(x=>x.id===id);return c?txt(c.name):""};
+        const items=P.slice(0,50).map((p,i)=>{
+          const col=(p.colours||[]).find(c=>c.images&&c.images[0]&&/^https?:/i.test(c.images[0]));
+          const price=typeof eff==="function"?eff(p):p.price;
+          const prod={"@type":"Product","name":txt(p.name),"brand":{"@type":"Brand","name":"RAAS"}};
+          const d=txt(p.description).slice(0,300);if(d)prod.description=d;
+          if(p.sku)prod.sku=txt(p.sku);
+          const c=catName(p.category);if(c)prod.category=c;
+          if(col)prod.image=col.images[0];
+          if(price!=null&&!isNaN(price))prod.offers={"@type":"Offer","url":SITE+"#shop","priceCurrency":"PKR","price":String(price),
+            "itemCondition":"https://schema.org/NewCondition",
+            "availability":(p.colours||[]).some(x=>x.inStock)?"https://schema.org/InStock":"https://schema.org/OutOfStock"};
+          return {"@type":"ListItem","position":i+1,"item":prod};
+        });
+        const json=JSON.stringify({"@context":"https://schema.org","@type":"ItemList","name":"RAAS Clothing – All Products","url":SITE+"#shop","itemListElement":items});
+        if(json!==lastLD){
+          lastLD=json;
+          let el=document.getElementById("raas-ld-products");
+          if(!el){el=document.createElement("script");el.type="application/ld+json";el.id="raas-ld-products";document.head.appendChild(el)}
+          el.textContent=json;
+        }
+      }
+      const org=document.getElementById("raas-ld-org");
+      if(org&&typeof CFG!=="undefined"&&CFG.contact&&!org.dataset.done){
+        const c=CFG.contact,data=JSON.parse(org.textContent),node=data["@graph"][0];
+        const same=[c.instagram,c.facebook,c.tiktok,c.youtube].filter(u=>/^https?:\/\//i.test(u||""));
+        if(same.length)node.sameAs=same;
+        if(c.phone)node.telephone=String(c.phone);
+        if(c.email)node.email=String(c.email);
+        if(same.length||c.phone||c.email){org.textContent=JSON.stringify(data);org.dataset.done="1"}
+      }
+    }catch(e){}
+  }
+
+  let raf=0,tm=0;
+  new MutationObserver(()=>{
+    if(!raf)raf=requestAnimationFrame(()=>{raf=0;fixAlts()});
+    clearTimeout(tm);tm=setTimeout(buildLD,400);
+  }).observe(document.body,{childList:true,subtree:true});
+  fixAlts();setTimeout(buildLD,1500);
+
+  /* 3. makes the schema's search URL (https://raas25.netlify.app/?q=suits) work: fills the search box and shows results */
+  const q0=new URLSearchParams(location.search).get("q");
+  if(q0){
+    let tries=0;const iv=setInterval(()=>{
+      const ready=typeof PRODUCTS!=="undefined"&&PRODUCTS.length;
+      if(ready||++tries>40){
+        clearInterval(iv);
+        const i=document.getElementById("q");
+        if(i){i.value=q0;i.dispatchEvent(new Event("input"));const b=document.getElementById("search");if(b)b.classList.add("on");
+          const sh=document.getElementById("shop");if(sh)sh.scrollIntoView()}
+      }
+    },250);
+  }
+})();
 })();

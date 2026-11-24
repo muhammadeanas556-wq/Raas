@@ -1,0 +1,10 @@
+# robots.txt for https://raas25.netlify.app/
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /supabase/
+Disallow: /google-sheets/
+Disallow: /*.sql$
+Disallow: /Code.gs
+
+Sitemap: https://raas25.netlify.app/sitemap.xml
